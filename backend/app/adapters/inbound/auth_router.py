@@ -1,0 +1,152 @@
+# ABOUTME: Authentication API router with registration, login, and user info endpoints
+# ABOUTME: Implements inbound adapter for authentication use cases
+
+from typing import Annotated
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
+
+from app.core.domain.user import UserCreate, UserResponse
+from app.core.use_cases.register_user import RegisterUser
+from app.core.use_cases.authenticate_user import AuthenticateUser
+from app.infrastructure.security.auth_service import AuthService
+from app.infrastructure.security.dependencies import CurrentUser
+from app.infrastructure.config.logging_config import get_logger
+
+logger = get_logger(__name__)
+
+router = APIRouter(prefix="/api/auth", tags=["authentication"])
+
+auth_service = AuthService()
+
+
+class TokenResponse(BaseModel):
+    """JWT token response schema."""
+    access_token: str
+    token_type: str = "bearer"
+
+
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def register(user_data: UserCreate):
+    """
+    Register a new user.
+
+    Args:
+        user_data: User registration data
+
+    Returns:
+        Created user entity (without password)
+
+    Raises:
+        HTTPException: If user already exists or validation fails
+    """
+    # TODO: Implement with real repository in Phase 4
+    # For now, we'll create a mock implementation
+    logger.info(f"Registration attempt for user: {user_data.username}")
+
+    try:
+        # Placeholder - will be implemented in Phase 4
+        from app.core.domain.user import User, UserResponse
+        from datetime import datetime
+
+        hashed_password = auth_service.hash_password(user_data.password)
+
+        user = User(
+            id="temp_user_id",
+            email=user_data.email,
+            username=user_data.username,
+            hashed_password=hashed_password,
+            full_name=user_data.full_name,
+            is_active=True,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+
+        return UserResponse(
+            id=user.id,
+            email=user.email,
+            username=user.username,
+            full_name=user.full_name,
+            is_active=user.is_active,
+            created_at=user.created_at
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Registration failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registration failed"
+        )
+
+
+@router.post("/token", response_model=TokenResponse)
+async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+    """
+    Login and get JWT access token.
+
+    OAuth2 compatible token endpoint using username and password.
+
+    Args:
+        form_data: OAuth2 password flow form data (username and password)
+
+    Returns:
+        JWT access token
+
+    Raises:
+        HTTPException: If credentials are invalid
+    """
+    logger.info(f"Login attempt for user: {form_data.username}")
+
+    try:
+        # TODO: Implement with real repository in Phase 4
+        # For now, we'll create a mock validation
+
+        # Mock user validation - replace with real authentication in Phase 4
+        user_id = "temp_user_id"
+        access_token = auth_service.create_access_token(user_id)
+
+        return TokenResponse(
+            access_token=access_token,
+            token_type="bearer"
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        logger.error(f"Login failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Login failed"
+        )
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_current_user_info(current_user: CurrentUser):
+    """
+    Get current user information.
+
+    Protected endpoint that returns the authenticated user's information.
+
+    Args:
+        current_user: Current authenticated user from JWT token
+
+    Returns:
+        Current user information
+    """
+    return UserResponse(
+        id=current_user.id,
+        email=current_user.email,
+        username=current_user.username,
+        full_name=current_user.full_name,
+        is_active=current_user.is_active,
+        created_at=current_user.created_at
+    )

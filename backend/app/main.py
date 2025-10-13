@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.infrastructure.config.settings import settings
 from app.infrastructure.config.logging_config import setup_logging, get_logger
 from app.infrastructure.database.mongodb import MongoDB
+from app.adapters.inbound.auth_router import router as auth_router
 
 logger = get_logger(__name__)
 
@@ -56,6 +57,9 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Include routers
+    app.include_router(auth_router)
 
     # Health check endpoint
     @app.get("/api/health")
