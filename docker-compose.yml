@@ -1,0 +1,57 @@
+# ABOUTME: Docker Compose configuration for the Genesis application stack
+# ABOUTME: Defines backend, frontend, and MongoDB services with volume mounts for development
+
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27017
+      - MONGODB_DB_NAME=genesis
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://localhost:11434}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-false}
+    depends_on:
+      - mongodb
+    volumes:
+      - ./backend:/app
+    networks:
+      - genesis-network
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - genesis-network
+
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=genesis
+    networks:
+      - genesis-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  genesis-network:
+    driver: bridge
