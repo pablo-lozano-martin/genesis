@@ -30,34 +30,25 @@ async def get_current_user(
 
     Raises:
         HTTPException: If token is invalid or user not found
-
-    Note:
-        This will be fully implemented once we add the repository in Phase 4.
-        For now, we validate the token structure.
     """
-    user_id = auth_service.verify_token(token)
+    from app.adapters.outbound.repositories.mongo_user_repository import MongoUserRepository
 
-    if user_id is None:
+    user_repository = MongoUserRepository()
+
+    user = await auth_service.get_current_user(token, user_repository)
+
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # TODO: Fetch user from repository in Phase 4
-    # For now, return a placeholder user with the validated ID
-    from app.core.domain.user import User
-    from datetime import datetime
-
-    user = User(
-        id=user_id,
-        email="user@example.com",
-        username="user",
-        hashed_password="",
-        is_active=True,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
-    )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Inactive user"
+        )
 
     return user
 

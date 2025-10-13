@@ -40,27 +40,15 @@ async def register(user_data: UserCreate):
     Raises:
         HTTPException: If user already exists or validation fails
     """
-    # TODO: Implement with real repository in Phase 4
-    # For now, we'll create a mock implementation
     logger.info(f"Registration attempt for user: {user_data.username}")
 
     try:
-        # Placeholder - will be implemented in Phase 4
-        from app.core.domain.user import User, UserResponse
-        from datetime import datetime
+        from app.adapters.outbound.repositories.mongo_user_repository import MongoUserRepository
 
-        hashed_password = auth_service.hash_password(user_data.password)
+        user_repository = MongoUserRepository()
+        register_use_case = RegisterUser(user_repository, auth_service)
 
-        user = User(
-            id="temp_user_id",
-            email=user_data.email,
-            username=user_data.username,
-            hashed_password=hashed_password,
-            full_name=user_data.full_name,
-            is_active=True,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
-        )
+        user = await register_use_case.execute(user_data)
 
         return UserResponse(
             id=user.id,
@@ -103,12 +91,15 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
     logger.info(f"Login attempt for user: {form_data.username}")
 
     try:
-        # TODO: Implement with real repository in Phase 4
-        # For now, we'll create a mock validation
+        from app.adapters.outbound.repositories.mongo_user_repository import MongoUserRepository
 
-        # Mock user validation - replace with real authentication in Phase 4
-        user_id = "temp_user_id"
-        access_token = auth_service.create_access_token(user_id)
+        user_repository = MongoUserRepository()
+        authenticate_use_case = AuthenticateUser(user_repository, auth_service)
+
+        user, access_token = await authenticate_use_case.execute(
+            form_data.username,
+            form_data.password
+        )
 
         return TokenResponse(
             access_token=access_token,

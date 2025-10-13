@@ -21,9 +21,18 @@ async def lifespan(app: FastAPI):
     """
     logger.info(f"Starting {settings.app_name} v{settings.app_version}")
 
-    # Startup: Connect to database
-    # Note: Document models will be registered here once we create them in Phase 2
-    await MongoDB.connect(document_models=[])
+    # Startup: Connect to database and register Beanie document models
+    from app.adapters.outbound.repositories.mongo_models import (
+        UserDocument,
+        ConversationDocument,
+        MessageDocument
+    )
+
+    await MongoDB.connect(document_models=[
+        UserDocument,
+        ConversationDocument,
+        MessageDocument
+    ])
 
     logger.info("Application startup complete")
 
