@@ -218,8 +218,4 @@ See `doc/INITIAL_PLAN.md` for the complete implementation roadmap.
 
 ## License
 
-[Your License Here]
-
-## Contributing
-
-[Your Contributing Guidelines Here]
+MIT License
