@@ -1,4 +1,4 @@
-# ABOUTME: Google Gemini LLM provider implementation using langchain-google-genai
+# ABOUTME: Google Gemini LLM provider implementation using LangChain
 # ABOUTME: Implements ILLMProvider port interface for Google Gemini models
 
 from typing import List, AsyncGenerator
@@ -17,27 +17,34 @@ class GeminiProvider(ILLMProvider):
     """
     Google Gemini LLM provider implementation.
 
-    Uses langchain-google-genai to communicate with Google's Gemini models.
-    This adapter implements the ILLMProvider port.
+    This adapter implements the ILLMProvider port using Google's Gemini API
+    through LangChain's ChatGoogleGenerativeAI integration.
     """
 
     def __init__(self):
-        """Initialize Gemini provider with settings."""
+        """Initialize the Gemini provider with configured model."""
         if not settings.google_api_key:
-            raise ValueError("Google API key is required but not set in environment")
+            raise ValueError("Google API key is not configured")
 
         self.model = ChatGoogleGenerativeAI(
-            google_api_key=settings.google_api_key,
             model=settings.google_model,
+            google_api_key=settings.google_api_key,
             temperature=0.7,
-            convert_system_message_to_human=True
+            streaming=True
         )
         logger.info(f"Initialized Gemini provider with model: {settings.google_model}")
 
-    def _convert_to_langchain_messages(self, messages: List[Message]):
-        """Convert domain messages to LangChain message format."""
-        langchain_messages = []
+    def _convert_messages(self, messages: List[Message]) -> List:
+        """
+        Convert domain Message objects to LangChain message format.
 
+        Args:
+            messages: List of domain message objects
+
+        Returns:
+            List of LangChain message objects
+        """
+        langchain_messages = []
         for msg in messages:
             if msg.role == MessageRole.USER:
                 langchain_messages.append(HumanMessage(content=msg.content))
@@ -50,7 +57,7 @@ class GeminiProvider(ILLMProvider):
 
     async def generate(self, messages: List[Message]) -> str:
         """
-        Generate a response from Google Gemini based on conversation history.
+        Generate a response from Gemini based on conversation history.
 
         Args:
             messages: List of messages representing the conversation history
@@ -59,19 +66,19 @@ class GeminiProvider(ILLMProvider):
             Generated response text
 
         Raises:
-            Exception: If Gemini generation fails
+            Exception: If LLM generation fails
         """
         try:
-            langchain_messages = self._convert_to_langchain_messages(messages)
+            langchain_messages = self._convert_messages(messages)
             response = await self.model.ainvoke(langchain_messages)
             return response.content
         except Exception as e:
             logger.error(f"Gemini generation failed: {e}")
-            raise
+            raise Exception(f"Failed to generate response from Gemini: {str(e)}")
 
     async def stream(self, messages: List[Message]) -> AsyncGenerator[str, None]:
         """
-        Stream a response from Google Gemini token-by-token.
+        Stream a response from Gemini token-by-token.
 
         Args:
             messages: List of messages representing the conversation history
@@ -80,18 +87,16 @@ class GeminiProvider(ILLMProvider):
             Response tokens as they are generated
 
         Raises:
-            Exception: If Gemini streaming fails
+            Exception: If LLM streaming fails
         """
         try:
-            langchain_messages = self._convert_to_langchain_messages(messages)
-
+            langchain_messages = self._convert_messages(messages)
             async for chunk in self.model.astream(langchain_messages):
                 if chunk.content:
                     yield chunk.content
-
         except Exception as e:
             logger.error(f"Gemini streaming failed: {e}")
-            raise
+            raise Exception(f"Failed to stream response from Gemini: {str(e)}")
 
     async def get_model_name(self) -> str:
         """

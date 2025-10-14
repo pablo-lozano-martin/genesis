@@ -1,4 +1,4 @@
-# ABOUTME: Ollama LLM provider implementation using langchain-community
+# ABOUTME: Ollama LLM provider implementation using LangChain
 # ABOUTME: Implements ILLMProvider port interface for local Ollama models
 
 from typing import List, AsyncGenerator
@@ -17,23 +17,30 @@ class OllamaProvider(ILLMProvider):
     """
     Ollama LLM provider implementation.
 
-    Uses langchain-community to communicate with local Ollama models.
-    This adapter implements the ILLMProvider port.
+    This adapter implements the ILLMProvider port using local Ollama models
+    through LangChain's ChatOllama integration.
     """
 
     def __init__(self):
-        """Initialize Ollama provider with settings."""
+        """Initialize the Ollama provider with configured model."""
         self.model = ChatOllama(
-            base_url=settings.ollama_base_url,
             model=settings.ollama_model,
+            base_url=settings.ollama_base_url,
             temperature=0.7
         )
         logger.info(f"Initialized Ollama provider with model: {settings.ollama_model} at {settings.ollama_base_url}")
 
-    def _convert_to_langchain_messages(self, messages: List[Message]):
-        """Convert domain messages to LangChain message format."""
-        langchain_messages = []
+    def _convert_messages(self, messages: List[Message]) -> List:
+        """
+        Convert domain Message objects to LangChain message format.
 
+        Args:
+            messages: List of domain message objects
+
+        Returns:
+            List of LangChain message objects
+        """
+        langchain_messages = []
         for msg in messages:
             if msg.role == MessageRole.USER:
                 langchain_messages.append(HumanMessage(content=msg.content))
@@ -55,15 +62,15 @@ class OllamaProvider(ILLMProvider):
             Generated response text
 
         Raises:
-            Exception: If Ollama generation fails
+            Exception: If LLM generation fails
         """
         try:
-            langchain_messages = self._convert_to_langchain_messages(messages)
+            langchain_messages = self._convert_messages(messages)
             response = await self.model.ainvoke(langchain_messages)
             return response.content
         except Exception as e:
             logger.error(f"Ollama generation failed: {e}")
-            raise
+            raise Exception(f"Failed to generate response from Ollama: {str(e)}")
 
     async def stream(self, messages: List[Message]) -> AsyncGenerator[str, None]:
         """
@@ -76,18 +83,16 @@ class OllamaProvider(ILLMProvider):
             Response tokens as they are generated
 
         Raises:
-            Exception: If Ollama streaming fails
+            Exception: If LLM streaming fails
         """
         try:
-            langchain_messages = self._convert_to_langchain_messages(messages)
-
+            langchain_messages = self._convert_messages(messages)
             async for chunk in self.model.astream(langchain_messages):
                 if chunk.content:
                     yield chunk.content
-
         except Exception as e:
             logger.error(f"Ollama streaming failed: {e}")
-            raise
+            raise Exception(f"Failed to stream response from Ollama: {str(e)}")
 
     async def get_model_name(self) -> str:
         """

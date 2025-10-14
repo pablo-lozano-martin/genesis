@@ -1,5 +1,5 @@
-# ABOUTME: Anthropic Claude LLM provider implementation using langchain-anthropic
-# ABOUTME: Implements ILLMProvider port interface for Anthropic Claude models
+# ABOUTME: Anthropic (Claude) LLM provider implementation using LangChain
+# ABOUTME: Implements ILLMProvider port interface for Anthropic models
 
 from typing import List, AsyncGenerator
 from langchain_anthropic import ChatAnthropic
@@ -15,29 +15,36 @@ logger = get_logger(__name__)
 
 class AnthropicProvider(ILLMProvider):
     """
-    Anthropic Claude LLM provider implementation.
+    Anthropic (Claude) LLM provider implementation.
 
-    Uses langchain-anthropic to communicate with Anthropic's Claude models.
-    This adapter implements the ILLMProvider port.
+    This adapter implements the ILLMProvider port using Anthropic's API
+    through LangChain's ChatAnthropic integration.
     """
 
     def __init__(self):
-        """Initialize Anthropic provider with settings."""
+        """Initialize the Anthropic provider with configured model."""
         if not settings.anthropic_api_key:
-            raise ValueError("Anthropic API key is required but not set in environment")
+            raise ValueError("Anthropic API key is not configured")
 
         self.model = ChatAnthropic(
-            api_key=settings.anthropic_api_key,
             model=settings.anthropic_model,
+            api_key=settings.anthropic_api_key,
             temperature=0.7,
-            max_tokens=4096
+            streaming=True
         )
         logger.info(f"Initialized Anthropic provider with model: {settings.anthropic_model}")
 
-    def _convert_to_langchain_messages(self, messages: List[Message]):
-        """Convert domain messages to LangChain message format."""
-        langchain_messages = []
+    def _convert_messages(self, messages: List[Message]) -> List:
+        """
+        Convert domain Message objects to LangChain message format.
 
+        Args:
+            messages: List of domain message objects
+
+        Returns:
+            List of LangChain message objects
+        """
+        langchain_messages = []
         for msg in messages:
             if msg.role == MessageRole.USER:
                 langchain_messages.append(HumanMessage(content=msg.content))
@@ -50,7 +57,7 @@ class AnthropicProvider(ILLMProvider):
 
     async def generate(self, messages: List[Message]) -> str:
         """
-        Generate a response from Anthropic Claude based on conversation history.
+        Generate a response from Anthropic based on conversation history.
 
         Args:
             messages: List of messages representing the conversation history
@@ -59,19 +66,19 @@ class AnthropicProvider(ILLMProvider):
             Generated response text
 
         Raises:
-            Exception: If Anthropic generation fails
+            Exception: If LLM generation fails
         """
         try:
-            langchain_messages = self._convert_to_langchain_messages(messages)
+            langchain_messages = self._convert_messages(messages)
             response = await self.model.ainvoke(langchain_messages)
             return response.content
         except Exception as e:
             logger.error(f"Anthropic generation failed: {e}")
-            raise
+            raise Exception(f"Failed to generate response from Anthropic: {str(e)}")
 
     async def stream(self, messages: List[Message]) -> AsyncGenerator[str, None]:
         """
-        Stream a response from Anthropic Claude token-by-token.
+        Stream a response from Anthropic token-by-token.
 
         Args:
             messages: List of messages representing the conversation history
@@ -80,18 +87,16 @@ class AnthropicProvider(ILLMProvider):
             Response tokens as they are generated
 
         Raises:
-            Exception: If Anthropic streaming fails
+            Exception: If LLM streaming fails
         """
         try:
-            langchain_messages = self._convert_to_langchain_messages(messages)
-
+            langchain_messages = self._convert_messages(messages)
             async for chunk in self.model.astream(langchain_messages):
                 if chunk.content:
                     yield chunk.content
-
         except Exception as e:
             logger.error(f"Anthropic streaming failed: {e}")
-            raise
+            raise Exception(f"Failed to stream response from Anthropic: {str(e)}")
 
     async def get_model_name(self) -> str:
         """

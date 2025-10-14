@@ -1,5 +1,5 @@
 # ABOUTME: LLM provider factory for creating provider instances based on configuration
-# ABOUTME: Handles provider selection and instantiation with error handling
+# ABOUTME: Selects appropriate provider (OpenAI, Anthropic, Gemini, Ollama) based on settings
 
 from app.core.ports.llm_provider import ILLMProvider
 from app.infrastructure.config.settings import settings
@@ -12,53 +12,56 @@ class LLMProviderFactory:
     """
     Factory for creating LLM provider instances.
 
-    Selects the appropriate provider based on the LLM_PROVIDER
-    environment variable and instantiates it.
+    This factory selects the appropriate LLM provider based on the
+    application configuration (LLM_PROVIDER environment variable).
     """
 
     @staticmethod
     def create_provider() -> ILLMProvider:
         """
-        Create and return an LLM provider instance.
+        Create an LLM provider instance based on configuration.
 
         Returns:
-            Configured LLM provider instance
+            ILLMProvider instance (OpenAI, Anthropic, Gemini, or Ollama)
 
         Raises:
-            ValueError: If provider type is unknown or configuration is invalid
+            ValueError: If the configured provider is not supported
         """
-        provider_type = settings.llm_provider.lower()
+        provider_name = settings.llm_provider.lower()
 
-        logger.info(f"Creating LLM provider: {provider_type}")
+        logger.info(f"Creating LLM provider: {provider_name}")
 
-        if provider_type == "openai":
+        if provider_name == "openai":
             from app.adapters.outbound.llm_providers.openai_provider import OpenAIProvider
             return OpenAIProvider()
 
-        elif provider_type == "anthropic":
+        elif provider_name == "anthropic":
             from app.adapters.outbound.llm_providers.anthropic_provider import AnthropicProvider
             return AnthropicProvider()
 
-        elif provider_type == "gemini":
+        elif provider_name == "gemini":
             from app.adapters.outbound.llm_providers.gemini_provider import GeminiProvider
             return GeminiProvider()
 
-        elif provider_type == "ollama":
+        elif provider_name == "ollama":
             from app.adapters.outbound.llm_providers.ollama_provider import OllamaProvider
             return OllamaProvider()
 
         else:
             raise ValueError(
-                f"Unknown LLM provider: {provider_type}. "
+                f"Unsupported LLM provider: {provider_name}. "
                 f"Supported providers: openai, anthropic, gemini, ollama"
             )
 
 
 def get_llm_provider() -> ILLMProvider:
     """
-    Convenience function to get the configured LLM provider.
+    Get the configured LLM provider instance.
+
+    This is a convenience function that uses the factory to create
+    a provider instance.
 
     Returns:
-        Configured LLM provider instance
+        ILLMProvider instance
     """
     return LLMProviderFactory.create_provider()
