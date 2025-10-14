@@ -120,6 +120,30 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
         )
 
 
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh_token(current_user: CurrentUser):
+    """
+    Refresh JWT access token.
+
+    Protected endpoint that issues a new access token for the authenticated user.
+    This allows users to extend their session without re-entering credentials.
+
+    Args:
+        current_user: Current authenticated user from JWT token
+
+    Returns:
+        New JWT access token
+    """
+    logger.info(f"Token refresh for user: {current_user.id}")
+
+    new_access_token = auth_service.create_access_token(user_id=current_user.id)
+
+    return TokenResponse(
+        access_token=new_access_token,
+        token_type="bearer"
+    )
+
+
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(current_user: CurrentUser):
     """
