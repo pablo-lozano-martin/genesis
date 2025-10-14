@@ -5,7 +5,9 @@ version: '3.8'
 
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
     ports:
       - "8000:8000"
     environment:
@@ -18,7 +20,7 @@ services:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://localhost:11434}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - DEBUG=${DEBUG:-false}
+      - DEBUG=${DEBUG:-true}
     depends_on:
       - mongodb
     volumes:
@@ -27,7 +29,9 @@ services:
       - genesis-network
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     ports:
       - "5173:5173"
     environment:
@@ -37,6 +41,8 @@ services:
       - /app/node_modules
     networks:
       - genesis-network
+    depends_on:
+      - backend
 
   mongodb:
     image: mongo:7.0
