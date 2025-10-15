@@ -1,7 +1,8 @@
 // ABOUTME: Message input component for sending chat messages
 // ABOUTME: Simple textarea with send button
 
-import React, { useState, KeyboardEvent } from "react";
+import React, { useState } from "react";
+import type { KeyboardEvent } from "react";
 
 interface MessageInputProps {
   onSend: (content: string) => void;

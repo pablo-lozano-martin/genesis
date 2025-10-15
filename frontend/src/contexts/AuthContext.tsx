@@ -1,7 +1,8 @@
 // ABOUTME: React Context for authentication state management
 // ABOUTME: Provides auth state and methods (login, register, logout) to all components
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import type { User, LoginRequest, RegisterRequest, AuthState } from '../types/auth';
 import { authService } from '../services/authService';
 

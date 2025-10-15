@@ -1,14 +1,16 @@
 // ABOUTME: WebSocket service for real-time chat communication
 // ABOUTME: Handles WebSocket connection, message sending, and token streaming reception
 
-export enum MessageType {
-  MESSAGE = "message",
-  TOKEN = "token",
-  COMPLETE = "complete",
-  ERROR = "error",
-  PING = "ping",
-  PONG = "pong",
-}
+export const MessageType = {
+  MESSAGE: "message",
+  TOKEN: "token",
+  COMPLETE: "complete",
+  ERROR: "error",
+  PING: "ping",
+  PONG: "pong",
+} as const;
+
+export type MessageType = (typeof MessageType)[keyof typeof MessageType];
 
 export interface ClientMessage {
   type: MessageType;
@@ -17,23 +19,27 @@ export interface ClientMessage {
 }
 
 export interface ServerTokenMessage {
-  type: MessageType.TOKEN;
+  type: typeof MessageType.TOKEN;
   content: string;
 }
 
 export interface ServerCompleteMessage {
-  type: MessageType.COMPLETE;
+  type: typeof MessageType.COMPLETE;
   message_id: string;
   conversation_id: string;
 }
 
 export interface ServerErrorMessage {
-  type: MessageType.ERROR;
+  type: typeof MessageType.ERROR;
   message: string;
   code?: string;
 }
 
-export type ServerMessage = ServerTokenMessage | ServerCompleteMessage | ServerErrorMessage;
+export interface ServerPongMessage {
+  type: typeof MessageType.PONG;
+}
+
+export type ServerMessage = ServerTokenMessage | ServerCompleteMessage | ServerErrorMessage | ServerPongMessage;
 
 export interface WebSocketConfig {
   url: string;
@@ -51,7 +57,7 @@ export class WebSocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
-  private pingInterval: NodeJS.Timeout | null = null;
+  private pingInterval: ReturnType<typeof setInterval> | null = null;
   private isManualClose = false;
 
   constructor(config: WebSocketConfig) {

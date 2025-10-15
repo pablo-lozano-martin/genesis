@@ -2,7 +2,7 @@
 // ABOUTME: Shows user and assistant messages with auto-scroll
 
 import React, { useEffect, useRef } from "react";
-import { Message } from "../../services/conversationService";
+import type { Message } from "../../services/conversationService";
 
 interface MessageListProps {
   messages: Message[];

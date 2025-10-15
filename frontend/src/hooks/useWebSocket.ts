@@ -2,7 +2,8 @@
 // ABOUTME: Manages WebSocket connection state, message sending, and streaming reception
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { WebSocketService, WebSocketConfig } from "../services/websocketService";
+import { WebSocketService } from "../services/websocketService";
+import type { WebSocketConfig } from "../services/websocketService";
 
 export interface UseWebSocketOptions {
   url: string;
@@ -79,7 +80,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
           };
         });
       },
-      onComplete: (messageId: string, conversationId: string) => {
+      onComplete: (_messageId: string, _conversationId: string) => {
         setStreamingMessage((prev) => {
           if (prev) {
             return {

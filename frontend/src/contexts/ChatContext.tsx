@@ -3,7 +3,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useWebSocket } from "../hooks/useWebSocket";
-import { conversationService, Conversation, Message } from "../services/conversationService";
+import { conversationService } from "../services/conversationService";
+import type { Conversation, Message } from "../services/conversationService";
 import { authService } from "../services/authService";
 
 const WS_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace("http", "ws");

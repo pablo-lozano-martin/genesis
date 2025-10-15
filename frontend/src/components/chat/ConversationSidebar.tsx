@@ -2,7 +2,7 @@
 // ABOUTME: Minimal list of conversations with create and delete actions
 
 import React from "react";
-import { Conversation } from "../../services/conversationService";
+import type { Conversation } from "../../services/conversationService";
 
 interface ConversationSidebarProps {
   conversations: Conversation[];
