@@ -53,7 +53,12 @@ class Settings(BaseSettings):
     ollama_model: str = "llama2"
 
     # CORS Settings
-    cors_origins: list[str] = ["http://localhost:3000", "http://frontend:3000"]
+    cors_origins: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://frontend:3000",
+        "http://frontend:5173"
+    ]
 
     # Logging Settings
     log_level: str = "INFO"
