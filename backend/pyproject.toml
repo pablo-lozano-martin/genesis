@@ -1,0 +1,101 @@
+# ABOUTME: Python project configuration including Ruff linter settings
+# ABOUTME: Defines code quality standards for the Genesis backend
+
+[tool.ruff]
+# Set line length to 100 characters
+line-length = 100
+
+# Enable auto-fixing for all fixable rules
+fix = true
+
+# Target Python 3.11
+target-version = "py311"
+
+# Exclude common directories
+exclude = [
+    ".git",
+    ".pytest_cache",
+    ".venv",
+    "__pycache__",
+    "venv",
+    "dist",
+    "build",
+]
+
+[tool.ruff.lint]
+# Enable comprehensive rule sets
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort (import sorting)
+    "N",     # pep8-naming
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "C4",    # flake8-comprehensions
+    "DTZ",   # flake8-datetimez
+    "T10",   # flake8-debugger
+    "EM",    # flake8-errmsg
+    "ISC",   # flake8-implicit-str-concat
+    "ICN",   # flake8-import-conventions
+    "PIE",   # flake8-pie
+    "PT",    # flake8-pytest-style
+    "Q",     # flake8-quotes
+    "RSE",   # flake8-raise
+    "RET",   # flake8-return
+    "SIM",   # flake8-simplify
+    "TID",   # flake8-tidy-imports
+    "TCH",   # flake8-type-checking
+    "ARG",   # flake8-unused-arguments
+    "PTH",   # flake8-use-pathlib
+    "ERA",   # eradicate (commented-out code)
+    "PL",    # pylint
+    "TRY",   # tryceratops
+    "RUF",   # ruff-specific rules
+]
+
+# Ignore specific rules that may be too strict for this project
+ignore = [
+    "E501",    # Line too long (handled by formatter)
+    "PLR0913", # Too many arguments
+    "TRY003",  # Avoid specifying long messages outside exception class
+    "EM101",   # Exception must not use string literal
+    "EM102",   # Exception must not use f-string literal
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Allow unused imports and variables in __init__.py files
+"__init__.py" = ["F401", "F403"]
+# Allow print statements in tests
+"tests/**/*.py" = ["T201"]
+
+[tool.ruff.lint.isort]
+# Configure import sorting
+known-first-party = ["app"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Indent with spaces
+indent-style = "space"
+
+# Respect magic trailing commas
+skip-magic-trailing-comma = false
+
+# Line endings: auto-detect
+line-ending = "auto"
+
+[tool.pytest.ini_options]
+# Pytest configuration
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+]

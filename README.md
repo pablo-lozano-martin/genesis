@@ -198,23 +198,99 @@ Key settings:
 - `DEBUG`: Enable debug mode (false in production)
 - `LOG_LEVEL`: Logging verbosity (INFO, DEBUG, WARNING, ERROR)
 
-## What's Next?
+## API Documentation
 
-This is Phase 1 of the implementation. Future phases will add:
+Interactive API documentation is available at `http://localhost:8000/docs` (Swagger UI) when running the application.
 
-- **Phase 2**: Core domain models and hexagonal architecture implementation
-- **Phase 3**: Authentication system with OAuth2 and JWT
-- **Phase 4**: Database repositories and data persistence
-- **Phase 5**: LLM provider abstractions (OpenAI, Anthropic, Gemini, Ollama)
-- **Phase 6**: LangGraph conversation flows
-- **Phase 7**: WebSocket real-time communication
-- **Phase 8**: REST API endpoints
-- **Phase 9**: Complete chat interface UI
-- **Phase 10**: Comprehensive testing
-- **Phase 11**: Production deployment configuration
-- **Phase 12**: Documentation and developer experience
+Key endpoints:
+- **Authentication**: `/api/auth/register`, `/api/auth/token`, `/api/auth/refresh`
+- **Conversations**: `/api/conversations` (CRUD operations)
+- **Messages**: `/api/conversations/{id}/messages`
+- **User**: `/api/user/me`
+- **WebSocket**: `/ws/chat` (real-time streaming)
 
-See `doc/INITIAL_PLAN.md` for the complete implementation roadmap.
+See `doc/API.md` for detailed API documentation.
+
+## Deployment
+
+### Development
+```bash
+docker-compose up
+```
+
+### Production
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+See `doc/DEPLOYMENT.md` for detailed deployment instructions.
+
+## Testing
+
+Run the test suite:
+```bash
+# All tests
+docker-compose exec backend pytest
+
+# Unit tests only
+docker-compose exec backend pytest -m unit
+
+# Integration tests only
+docker-compose exec backend pytest -m integration
+```
+
+## Code Quality
+
+### Linting
+
+The project includes automated linting for both backend and frontend:
+
+**Python (Backend)**:
+```bash
+# Run Ruff linter
+docker-compose exec backend ruff check .
+
+# Auto-fix issues
+docker-compose exec backend ruff check --fix .
+
+# Format code
+docker-compose exec backend ruff format .
+```
+
+**TypeScript (Frontend)**:
+```bash
+# Run ESLint
+docker-compose exec frontend npm run lint
+```
+
+### Pre-commit Hooks
+
+Install pre-commit hooks to automatically lint code before commits:
+
+```bash
+# Install pre-commit hooks
+bash .pre-commit-install.sh
+
+# Or manually
+pip install pre-commit
+pre-commit install
+
+# Run hooks on all files
+pre-commit run --all-files
+```
+
+## Documentation
+
+- `doc/ARCHITECTURE.md` - Detailed architecture explanation
+- `doc/API.md` - API endpoint documentation
+- `doc/DEPLOYMENT.md` - Production deployment guide
+- `doc/INITIAL_PLAN.md` - Original implementation plan
+
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+Please make sure to update tests as appropriate.
 
 ## License
 

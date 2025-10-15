@@ -1,0 +1,52 @@
+# ABOUTME: Pre-commit hooks configuration for automated code quality checks
+# ABOUTME: Runs linting and formatting on staged files before commit
+
+# See https://pre-commit.com for more information
+repos:
+  # Ruff - Python linter and formatter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.15
+    hooks:
+      # Run the linter
+      - id: ruff
+        args: [--fix]
+        files: ^backend/
+      # Run the formatter
+      - id: ruff-format
+        files: ^backend/
+
+  # ESLint - TypeScript/JavaScript linter
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.0.0
+    hooks:
+      - id: eslint
+        files: ^frontend/.*\.[jt]sx?$
+        types: [file]
+        additional_dependencies:
+          - eslint@^9.0.0
+          - typescript-eslint
+          - eslint-plugin-react-hooks
+          - eslint-plugin-react-refresh
+          - globals
+
+  # Basic file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-merge-conflict
+      - id: check-json
+      - id: pretty-format-json
+        args: [--autofix, --no-sort-keys]
+        exclude: package-lock.json
+
+  # Docker file linting
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        args: [--ignore, DL3008, --ignore, DL3009]
