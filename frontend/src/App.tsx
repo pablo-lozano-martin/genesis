@@ -3,6 +3,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ChatProvider } from "./contexts/ChatContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { Login } from "./pages/Login";
+import { Register } from "./pages/Register";
 import { Chat } from "./pages/Chat";
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route
             path="/chat"
             element={
