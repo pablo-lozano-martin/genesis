@@ -41,7 +41,7 @@ class TestLLMProviderFactory:
         """Test creating Gemini provider."""
         mock_settings.llm_provider = "gemini"
         mock_settings.google_api_key = "test-key"
-        mock_settings.google_model = "gemini-pro"
+        mock_settings.google_model = "gemini-2.0-flash"
 
         provider = LLMProviderFactory.create_provider()
 

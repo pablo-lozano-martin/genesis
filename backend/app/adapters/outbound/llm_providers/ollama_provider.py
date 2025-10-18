@@ -23,6 +23,18 @@ class OllamaProvider(ILLMProvider):
 
     def __init__(self):
         """Initialize the Ollama provider with configured model."""
+        if not settings.ollama_model:
+            raise ValueError(
+                "OLLAMA_MODEL is not configured. "
+                "Please set OLLAMA_MODEL in your .env file (e.g., llama2)."
+            )
+
+        if not settings.ollama_base_url:
+            raise ValueError(
+                "OLLAMA_BASE_URL is not configured. "
+                "Please set OLLAMA_BASE_URL in your .env file (e.g., http://localhost:11434)."
+            )
+
         self.model = ChatOllama(
             model=settings.ollama_model,
             base_url=settings.ollama_base_url,

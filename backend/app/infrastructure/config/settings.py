@@ -34,23 +34,23 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
 
     # LLM Provider Settings
-    llm_provider: str = "openai"  # openai, anthropic, gemini, ollama
+    llm_provider: str  # openai, anthropic, gemini, ollama
 
     # OpenAI Settings
     openai_api_key: Optional[str] = None
-    openai_model: str = "gpt-4-turbo-preview"
+    openai_model: Optional[str] = None
 
     # Anthropic Settings
     anthropic_api_key: Optional[str] = None
-    anthropic_model: str = "claude-3-sonnet-20240229"
+    anthropic_model: Optional[str] = None
 
     # Google Settings
     google_api_key: Optional[str] = None
-    google_model: str = "gemini-pro"
+    google_model: Optional[str] = None
 
     # Ollama Settings
-    ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "llama2"
+    ollama_base_url: Optional[str] = None
+    ollama_model: Optional[str] = None
 
     # CORS Settings
     cors_origins: list[str] = [

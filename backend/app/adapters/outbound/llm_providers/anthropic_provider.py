@@ -24,7 +24,16 @@ class AnthropicProvider(ILLMProvider):
     def __init__(self):
         """Initialize the Anthropic provider with configured model."""
         if not settings.anthropic_api_key:
-            raise ValueError("Anthropic API key is not configured")
+            raise ValueError(
+                "ANTHROPIC_API_KEY is not configured. "
+                "Please set ANTHROPIC_API_KEY in your .env file."
+            )
+
+        if not settings.anthropic_model:
+            raise ValueError(
+                "ANTHROPIC_MODEL is not configured. "
+                "Please set ANTHROPIC_MODEL in your .env file (e.g., claude-3-sonnet-20240229)."
+            )
 
         self.model = ChatAnthropic(
             model=settings.anthropic_model,

@@ -24,7 +24,16 @@ class GeminiProvider(ILLMProvider):
     def __init__(self):
         """Initialize the Gemini provider with configured model."""
         if not settings.google_api_key:
-            raise ValueError("Google API key is not configured")
+            raise ValueError(
+                "GOOGLE_API_KEY is not configured. "
+                "Please set GOOGLE_API_KEY in your .env file."
+            )
+
+        if not settings.google_model:
+            raise ValueError(
+                "GOOGLE_MODEL is not configured. "
+                "Please set GOOGLE_MODEL in your .env file (e.g., gemini-2.0-flash)."
+            )
 
         self.model = ChatGoogleGenerativeAI(
             model=settings.google_model,
@@ -103,6 +112,6 @@ class GeminiProvider(ILLMProvider):
         Get the name of the current Gemini model being used.
 
         Returns:
-            Model name (e.g., "gemini-pro")
+            Model name (e.g., "gemini-2.0-flash")
         """
         return settings.google_model

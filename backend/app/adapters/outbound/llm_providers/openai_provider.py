@@ -24,7 +24,16 @@ class OpenAIProvider(ILLMProvider):
     def __init__(self):
         """Initialize the OpenAI provider with configured model."""
         if not settings.openai_api_key:
-            raise ValueError("OpenAI API key is not configured")
+            raise ValueError(
+                "OPENAI_API_KEY is not configured. "
+                "Please set OPENAI_API_KEY in your .env file."
+            )
+
+        if not settings.openai_model:
+            raise ValueError(
+                "OPENAI_MODEL is not configured. "
+                "Please set OPENAI_MODEL in your .env file (e.g., gpt-4-turbo-preview)."
+            )
 
         self.model = ChatOpenAI(
             model=settings.openai_model,
