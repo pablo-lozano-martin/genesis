@@ -86,12 +86,13 @@ class IConversationRepository(ABC):
         pass
 
     @abstractmethod
-    async def increment_message_count(self, conversation_id: str) -> Optional[Conversation]:
+    async def increment_message_count(self, conversation_id: str, count: int = 1) -> Optional[Conversation]:
         """
         Increment the message count for a conversation.
 
         Args:
             conversation_id: Conversation unique identifier
+            count: Number to increment by (default: 1)
 
         Returns:
             Updated conversation entity if found, None otherwise

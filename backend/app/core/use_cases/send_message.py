@@ -82,7 +82,6 @@ class SendMessage:
         )
         assistant_message_entity = await self.message_repository.create(assistant_message)
 
-        await self.conversation_repository.increment_message_count(conversation_id)
-        await self.conversation_repository.increment_message_count(conversation_id)
+        await self.conversation_repository.increment_message_count(conversation_id, 2)
 
         return assistant_message_entity
