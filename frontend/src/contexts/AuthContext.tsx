@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User, LoginRequest, RegisterRequest, AuthState } from '../types/auth';
 import { authService } from '../services/authService';
+import { setupAxiosInterceptors } from '../services/axiosConfig';
 
 interface AuthContextType extends AuthState {
   login: (data: LoginRequest) => Promise<void>;
@@ -23,6 +24,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  const logout = () => {
+    authService.logout();
+    setUser(null);
+    setToken(null);
+    setIsAuthenticated(false);
+  };
+
+  useEffect(() => {
+    setupAxiosInterceptors(logout);
+  }, []);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -75,13 +87,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const logout = () => {
-    authService.logout();
-    setUser(null);
-    setToken(null);
-    setIsAuthenticated(false);
   };
 
   const value: AuthContextType = {
