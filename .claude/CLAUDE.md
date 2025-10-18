@@ -28,6 +28,15 @@
 - YOU MUST ALWAYS ask for clarification rather than making assumptions.
 - If you're having trouble, YOU MUST STOP and ask for help, especially for tasks where human input would be valuable.
 
+## Project Documentation
+
+- For general project information, refer to `/doc/general/`:
+  - `API.md` - API endpoints reference
+  - `ARCHITECTURE.md` - Hexagonal architecture and design decisions
+  - `DEPLOYMENT.md` - Deployment guide
+  - `DEVELOPMENT.md` - Development workflow and commands
+- These files contain essential context about the project structure, technology stack, and workflows.
+
 ## Testing
 
 - Tests MUST comprehensively cover ALL implemented functionality. 

@@ -1,35 +1,36 @@
 # Development Guide
 
+Quick reference for developing on Genesis.
+
 ## Project Structure
 
 ```
 genesis/
-├── backend/                    # FastAPI backend
+├── backend/
 │   ├── app/
-│   │   ├── core/              # Domain models, ports, and use cases
+│   │   ├── core/              # Domain models, ports, use cases
 │   │   ├── adapters/          # Inbound (API) and outbound (DB, LLM) adapters
 │   │   ├── infrastructure/    # Config, logging, database, security
 │   │   ├── langgraph/         # LangGraph conversation flows
-│   │   └── main.py            # Application entry point
+│   │   └── main.py
 │   ├── tests/                 # Unit and integration tests
 │   ├── requirements.txt
 │   └── Dockerfile
-├── frontend/                   # React frontend
+├── frontend/
 │   ├── src/
 │   │   ├── components/        # React components
 │   │   ├── lib/               # Utilities
 │   │   └── main.tsx
 │   ├── package.json
 │   └── Dockerfile
-├── docker-compose.yml
-└── .env.example
+└── docker-compose.yml
 ```
 
 ## Technology Stack
 
 ### Backend
-- **FastAPI**: Modern, fast web framework
-- **Beanie**: Async MongoDB ODM
+- **FastAPI**: Web framework
+- **Beanie**: MongoDB ODM
 - **LangChain/LangGraph**: LLM orchestration
 - **Pydantic**: Data validation
 - **Python-Jose**: JWT authentication
@@ -38,71 +39,62 @@ genesis/
 ### Frontend
 - **React 18**: UI library
 - **TypeScript**: Type safety
-- **Vite**: Fast build tool
-- **TailwindCSS**: Utility-first CSS
+- **Vite**: Build tool
+- **TailwindCSS**: Styling
 - **Axios**: HTTP client
-- **React Router**: Routing
 
 ### Infrastructure
 - **Docker**: Containerization
-- **MongoDB**: Document database
-- **Uvicorn**: ASGI server
-
-## Features
-
-- **Backend**: FastAPI with hexagonal architecture for clean separation of concerns
-- **Frontend**: React + TypeScript + Vite + TailwindCSS
-- **Database**: MongoDB with Beanie ODM
-- **LLM Support**: OpenAI, Anthropic, Google Gemini, and Ollama
-- **Real-time**: WebSocket support for streaming LLM responses
-- **Auth**: JWT-based authentication with OAuth2
-- **Orchestration**: LangGraph for conversation flow management
-- **Docker**: One-command setup with docker-compose
+- **MongoDB**: Database
 
 ## Development Workflow
 
-### Backend Development
+### Backend
 
-The backend uses hot-reloading, so changes to Python files will automatically restart the server.
+The backend uses hot-reloading for automatic server restarts.
 
-**Run tests**:
 ```bash
+# Run tests
 docker-compose exec backend pytest
-```
 
-**Access backend shell**:
-```bash
+# Run specific tests
+docker-compose exec backend pytest tests/unit/
+docker-compose exec backend pytest -m integration
+
+# Access backend shell
 docker-compose exec backend bash
+
+# View logs
+docker-compose logs -f backend
 ```
 
-### Frontend Development
+### Frontend
 
 The frontend uses Vite's hot-reloading for instant updates.
 
-**Access frontend shell**:
 ```bash
-docker-compose exec frontend sh
-```
-
-**Install new packages**:
-```bash
+# Install new packages
 docker-compose exec frontend npm install <package-name>
+
+# Access frontend shell
+docker-compose exec frontend sh
+
+# View logs
+docker-compose logs -f frontend
 ```
 
-### View Logs
+### Database
 
 ```bash
-# All services
-docker-compose logs -f
+# Access MongoDB shell
+docker-compose exec mongodb mongosh
 
-# Specific service
-docker-compose logs -f backend
-docker-compose logs -f frontend
+# View database
+docker-compose exec mongodb mongosh --eval "show dbs"
 ```
 
 ## Testing
 
-Run the test suite:
 ```bash
 # All tests
 docker-compose exec backend pytest
@@ -112,13 +104,14 @@ docker-compose exec backend pytest -m unit
 
 # Integration tests only
 docker-compose exec backend pytest -m integration
+
+# With coverage
+docker-compose exec backend pytest --cov=app
 ```
 
 ## Code Quality
 
 ### Linting
-
-The project includes automated linting for both backend and frontend:
 
 **Python (Backend)**:
 ```bash
@@ -140,7 +133,7 @@ docker-compose exec frontend npm run lint
 
 ### Pre-commit Hooks
 
-Install pre-commit hooks to automatically lint code before commits:
+Install pre-commit hooks to automatically lint code:
 
 ```bash
 # Install pre-commit hooks
@@ -160,6 +153,51 @@ All configuration is managed through environment variables. See `.env.example` f
 
 Key settings:
 - `LLM_PROVIDER`: Choose between openai, anthropic, gemini, or ollama
-- `SECRET_KEY`: JWT signing key (generate a secure random string)
+- `SECRET_KEY`: JWT signing key (generate with `openssl rand -hex 32`)
 - `DEBUG`: Enable debug mode (false in production)
 - `LOG_LEVEL`: Logging verbosity (INFO, DEBUG, WARNING, ERROR)
+
+## Common Tasks
+
+### Adding a New LLM Provider
+
+1. Create provider class in `app/adapters/outbound/llm_providers/`
+2. Implement `ILLMProvider` interface
+3. Add configuration to `.env.example`
+4. Update provider factory
+
+### Adding a New API Endpoint
+
+1. Create use case in `app/core/use_cases/`
+2. Add router in `app/adapters/inbound/api/`
+3. Register router in `main.py`
+4. Add tests in `tests/`
+
+### Adding a New Domain Model
+
+1. Create model in `app/core/domain/`
+2. Create port interface in `app/core/ports/`
+3. Create MongoDB document in `app/adapters/outbound/repositories/`
+4. Implement repository
+
+## Useful Commands
+
+```bash
+# View all services
+docker-compose ps
+
+# Restart specific service
+docker-compose restart backend
+
+# Rebuild service
+docker-compose up -d --build backend
+
+# View all logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes
+docker-compose down -v
+```

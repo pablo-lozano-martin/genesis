@@ -1,8 +1,8 @@
-# Genesis
+# Genesis 💬
 
 A full-stack AI chatbot application built with FastAPI, React, and LangGraph. Features a hexagonal architecture backend, modern React frontend with TailwindCSS, and support for multiple LLM providers (OpenAI, Anthropic, Google Gemini, and Ollama).
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
@@ -56,6 +56,10 @@ This will start:
 - Frontend: http://localhost:5173
 - API Documentation: http://localhost:8000/docs
 
-## License
+## 🤖 Development Workflow
+
+This project leverages **Claude Code** with a state-of-the-art AI-assisted development workflow to explore innovative ways of building software. The workflow combines hexagonal architecture principles with AI pair programming to maintain code quality and accelerate development.
+
+## 📄 License
 
 MIT License
