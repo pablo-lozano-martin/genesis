@@ -10,6 +10,9 @@
 # MCP configuration (may contain sensitive server configs)
 .mcp.json
 
+# Claude
+.claude
+
 # Python
 __pycache__/
 *.py[cod]
