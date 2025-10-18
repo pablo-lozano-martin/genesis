@@ -60,7 +60,7 @@ async def create_conversation(
 
     conversation = await conversation_repository.create(
         user_id=current_user.id,
-        title=conversation_data.title
+        conversation_data=conversation_data
     )
 
     logger.info(f"Created conversation {conversation.id} for user {current_user.id}")
