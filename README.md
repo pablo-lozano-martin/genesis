@@ -58,7 +58,11 @@ This will start:
 
 ## 🤖 Development Workflow
 
-This project leverages **Claude Code** with a state-of-the-art AI-assisted development workflow to explore innovative ways of building software. The workflow combines hexagonal architecture principles with AI pair programming to maintain code quality and accelerate development.
+This project follows a state-of-the-art structured AI-assisted development workflow inspired by [flype/dot-claude](https://github.com/flype/dot-claude).  
+
+The process starts by defining clear issues or features, then specialized sub-agents explore the codebase from different perspectives (backend, frontend, architecture, etc.) to gather insights before any implementation begins.  
+
+Their findings are consolidated into a planning phase, followed by implementation, testing, and refinement.
 
 ## 📄 License
 
