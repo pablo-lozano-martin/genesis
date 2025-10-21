@@ -16,7 +16,7 @@ Here are some examples of issue titles and how their respective folders are name
 1. Execute the plan step by step, remember to build test before the implementation and run the test suite constanly to get quick feedback.
 2. Ensure consistency with existing code in the branch
 3. Run local builds and tests suite before git commit & push
-4. create the PR
+4. Create the PR
 5. Report status of completenes:
 
 <results>
