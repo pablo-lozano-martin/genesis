@@ -60,6 +60,8 @@ This will start:
 
 This project follows a state-of-the-art structured AI-assisted development workflow inspired by [flype/dot-claude](https://github.com/flype/dot-claude).  
 
+> **Note:** The `.claude` directory and the Claude workflow are an integral part of this project.
+
 The process starts by defining clear issues or features, then specialized sub-agents explore the codebase from different perspectives (backend, frontend, architecture, etc.) to gather insights before any implementation begins.  
 
 Their findings are consolidated into a planning phase, followed by implementation, testing, and refinement.
