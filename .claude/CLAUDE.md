@@ -28,13 +28,22 @@
 - YOU MUST ALWAYS ask for clarification rather than making assumptions.
 - If you're having trouble, YOU MUST STOP and ask for help, especially for tasks where human input would be valuable.
 
+## Agents Workflow
+
+These are the following agents that you have at your disposal:
+
+- hexagonal-backend-analyzer
+- shadcn-analyzer
+
+NEVER use other agents apart from these.
+
 ## Project Documentation
 
 - For general project information, refer to `/doc/general/`:
-  - `API.md` - API endpoints reference
-  - `ARCHITECTURE.md` - Hexagonal architecture and design decisions
-  - `DEPLOYMENT.md` - Deployment guide
-  - `DEVELOPMENT.md` - Development workflow and commands
+  - `API.md` - API endpoints reference.
+  - `ARCHITECTURE.md` - Hexagonal architecture and design decisions.
+  - `DEPLOYMENT.md` - Deployment guide.
+  - `DEVELOPMENT.md` - Development workflow and commands.
 - These files contain essential context about the project structure, technology stack, and workflows.
 
 ## Testing

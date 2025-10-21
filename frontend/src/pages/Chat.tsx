@@ -67,7 +67,7 @@ export const Chat: React.FC = () => {
                 </div>
               )}
 
-              <MessageList messages={messages} streamingMessage={streamingMessage} />
+              <MessageList messages={messages} streamingMessage={streamingMessage} isStreaming={isStreaming} />
               <MessageInput
                 onSend={sendMessage}
                 disabled={!isConnected || isStreaming}

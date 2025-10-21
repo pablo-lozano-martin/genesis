@@ -9,6 +9,7 @@ from app.adapters.inbound.websocket_schemas import (
     ServerTokenMessage,
     ServerCompleteMessage,
     ServerErrorMessage,
+    PingMessage,
     PongMessage,
     MessageType
 )
@@ -85,7 +86,15 @@ async def handle_websocket_chat(
                 logger.debug(f"Received message from user {user.id}: {data[:100]}")
 
                 try:
-                    client_message = ClientMessage.model_validate_json(data)
+                    raw_message = json.loads(data)
+                    message_type = raw_message.get("type")
+
+                    if message_type == MessageType.PING:
+                        PingMessage.model_validate(raw_message)
+                        await manager.send_message(websocket, PongMessage().model_dump())
+                        continue
+
+                    client_message = ClientMessage.model_validate(raw_message)
                 except Exception as e:
                     logger.error(f"Invalid message format from user {user.id}: {e}")
                     error_msg = ServerErrorMessage(
@@ -93,10 +102,6 @@ async def handle_websocket_chat(
                         code="INVALID_FORMAT"
                     )
                     await manager.send_message(websocket, error_msg.model_dump())
-                    continue
-
-                if client_message.type == MessageType.PING:
-                    await manager.send_message(websocket, PongMessage().model_dump())
                     continue
 
                 conversation_id = client_message.conversation_id
