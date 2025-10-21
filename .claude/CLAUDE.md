@@ -30,10 +30,19 @@
 
 ## Agents Workflow
 
-These are the following agents that you have at your disposal:
+These are the following analyzer agents that you have at your disposal:
 
-- hexagonal-backend-analyzer
-- shadcn-analyzer
+- **hexagonal-backend-analyzer** - Backend hexagonal architecture analysis
+- **shadcn-ui-analyzer** - React UI components (Shadcn UI & TailwindCSS)
+- **api-contract-analyzer** - API endpoints, routes, and schemas
+- **data-flow-analyzer** - Data flow across backend layers
+- **database-mongodb-analyzer** - MongoDB structure, queries, and performance
+- **llm-integration-analyzer** - LLM provider integration patterns
+- **react-frontend-analyzer** - React architecture and state management
+- **security-analyzer** - Authentication, authorization, and security
+- **testing-coverage-analyzer** - Test coverage and strategy
+
+All analyzer agents are for analysis and exploration only. They write findings to `/doc/features/<issue_name>/<analyzer_topic>.md` and NEVER modify code.
 
 NEVER use other agents apart from these.
 
