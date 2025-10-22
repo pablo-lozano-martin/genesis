@@ -1,6 +1,7 @@
 # ABOUTME: LLM provider factory for creating provider instances based on configuration
 # ABOUTME: Selects appropriate provider (OpenAI, Anthropic, Gemini, Ollama) based on settings
 
+from typing import List, Optional
 from app.core.ports.llm_provider import ILLMProvider
 from app.infrastructure.config.settings import settings
 from app.infrastructure.config.logging_config import get_logger
@@ -17,9 +18,12 @@ class LLMProviderFactory:
     """
 
     @staticmethod
-    def create_provider() -> ILLMProvider:
+    def create_provider(tools: Optional[List] = None) -> ILLMProvider:
         """
         Create an LLM provider instance based on configuration.
+
+        Args:
+            tools: Optional list of LangChain tools to bind to the provider
 
         Returns:
             ILLMProvider instance (OpenAI, Anthropic, Gemini, or Ollama)
@@ -33,7 +37,7 @@ class LLMProviderFactory:
 
         if provider_name == "openai":
             from app.adapters.outbound.llm_providers.openai_provider import OpenAIProvider
-            return OpenAIProvider()
+            return OpenAIProvider(tools=tools)
 
         elif provider_name == "anthropic":
             from app.adapters.outbound.llm_providers.anthropic_provider import AnthropicProvider
@@ -54,14 +58,17 @@ class LLMProviderFactory:
             )
 
 
-def get_llm_provider() -> ILLMProvider:
+def get_llm_provider(tools: Optional[List] = None) -> ILLMProvider:
     """
     Get the configured LLM provider instance.
 
     This is a convenience function that uses the factory to create
     a provider instance.
 
+    Args:
+        tools: Optional list of LangChain tools to bind to the provider
+
     Returns:
         ILLMProvider instance
     """
-    return LLMProviderFactory.create_provider()
+    return LLMProviderFactory.create_provider(tools=tools)
