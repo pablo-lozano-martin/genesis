@@ -1,7 +1,7 @@
 # ABOUTME: OpenAI LLM provider implementation using LangChain
 # ABOUTME: Implements ILLMProvider port interface for OpenAI models
 
-from typing import List, AsyncGenerator
+from typing import List, AsyncGenerator, Optional
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
@@ -21,8 +21,12 @@ class OpenAIProvider(ILLMProvider):
     through LangChain's ChatOpenAI integration.
     """
 
-    def __init__(self):
-        """Initialize the OpenAI provider with configured model."""
+    def __init__(self, tools: Optional[List] = None):
+        """Initialize the OpenAI provider with configured model and optional tools.
+
+        Args:
+            tools: Optional list of LangChain tools to bind to the model
+        """
         if not settings.openai_api_key:
             raise ValueError(
                 "OPENAI_API_KEY is not configured. "
@@ -41,7 +45,13 @@ class OpenAIProvider(ILLMProvider):
             temperature=0.7,
             streaming=True
         )
-        logger.info(f"Initialized OpenAI provider with model: {settings.openai_model}")
+
+        # Bind tools to model if provided
+        if tools:
+            self.model = self.model.bind_tools(tools)
+            logger.info(f"Initialized OpenAI provider with model: {settings.openai_model} and {len(tools)} tool(s)")
+        else:
+            logger.info(f"Initialized OpenAI provider with model: {settings.openai_model}")
 
     def _convert_messages(self, messages: List[Message]) -> List:
         """
