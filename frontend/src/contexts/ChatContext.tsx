@@ -6,6 +6,7 @@ import { useWebSocket } from "../hooks/useWebSocket";
 import { conversationService } from "../services/conversationService";
 import type { Conversation, Message } from "../services/conversationService";
 import { authService } from "../services/authService";
+import { generateTitleFromMessage } from "../lib/titleUtils";
 
 const WS_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace("http", "ws");
 
@@ -22,6 +23,7 @@ interface ChatContextType {
   selectConversation: (id: string) => Promise<void>;
   deleteConversation: (id: string) => Promise<void>;
   sendMessage: (content: string) => void;
+  updateConversationTitle: (id: string, title: string) => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -108,8 +110,30 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateConversationTitle = async (id: string, title: string) => {
+    try {
+      const updated = await conversationService.updateConversation(id, { title });
+
+      // Update conversations list
+      setConversations((prev) =>
+        prev.map((c) => (c.id === id ? updated : c))
+      );
+
+      // Update current conversation if it's the one being renamed
+      if (currentConversation?.id === id) {
+        setCurrentConversation(updated);
+      }
+    } catch (err) {
+      console.error("Failed to update conversation title:", err);
+    }
+  };
+
   const sendMessage = (content: string) => {
     if (!currentConversation || !isConnected) return;
+
+    // Detect if this is the first user message
+    const userMessages = messages.filter((m) => m.role === "user");
+    const isFirstMessage = userMessages.length === 0;
 
     setMessages((prev) => [
       ...prev,
@@ -124,6 +148,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setIsStreaming(true);
     wsSendMessage(currentConversation.id, content);
+
+    // Auto-name if first message and title is still default
+    if (isFirstMessage && currentConversation.title === "New Chat") {
+      const autoTitle = generateTitleFromMessage(content);
+      updateConversationTitle(currentConversation.id, autoTitle);
+    }
   };
 
   useEffect(() => {
@@ -145,6 +175,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         selectConversation,
         deleteConversation,
         sendMessage,
+        updateConversationTitle,
       }}
     >
       {children}
