@@ -16,7 +16,8 @@ class TestConversationAPI:
         user_data = {
             "email": f"conv{pytest.random_id}@example.com",
             "username": f"convuser{pytest.random_id}",
-            "password": "securepass123"
+            "password": "securepass123",
+            "full_name": "Test User"
         }
 
         await client.post("/api/auth/register", json=user_data)
