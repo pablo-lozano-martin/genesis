@@ -27,6 +27,10 @@ export interface CreateConversationRequest {
   title?: string;
 }
 
+export interface UpdateConversationRequest {
+  title?: string;
+}
+
 export class ConversationService {
   private getAuthHeaders() {
     const token = authService.getToken();
@@ -61,6 +65,18 @@ export class ConversationService {
     await axios.delete(`${API_URL}/api/conversations/${id}`, {
       headers: this.getAuthHeaders(),
     });
+  }
+
+  async updateConversation(
+    id: string,
+    data: UpdateConversationRequest
+  ): Promise<Conversation> {
+    const response = await axios.patch(
+      `${API_URL}/api/conversations/${id}`,
+      data,
+      { headers: this.getAuthHeaders() }
+    );
+    return response.data;
   }
 
   async getMessages(conversationId: string, skip = 0, limit = 500): Promise<Message[]> {
