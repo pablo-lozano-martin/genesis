@@ -1,8 +1,8 @@
 # ABOUTME: Node for processing and validating user input messages
 # ABOUTME: Ensures input is clean and properly formatted before LLM processing
 
+from langchain_core.messages import HumanMessage
 from app.langgraph.state import ConversationState
-from app.core.domain.message import Message, MessageRole
 from app.infrastructure.config.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -14,7 +14,7 @@ async def process_user_input(state: ConversationState) -> dict:
 
     This node:
     - Validates the input is not empty
-    - Creates a proper Message object with USER role
+    - Creates a HumanMessage for LangChain flow
     - Adds it to the message history
     - Sets error state if validation fails
 
@@ -34,11 +34,7 @@ async def process_user_input(state: ConversationState) -> dict:
 
     logger.info(f"Processing input for conversation {state['conversation_id']}")
 
-    user_message = Message(
-        conversation_id=state["conversation_id"],
-        role=MessageRole.USER,
-        content=current_input
-    )
+    user_message = HumanMessage(content=current_input)
 
     return {
         "messages": [user_message],

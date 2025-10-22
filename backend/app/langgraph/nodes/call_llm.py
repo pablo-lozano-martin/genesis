@@ -15,14 +15,14 @@ async def call_llm(state: ConversationState, llm_provider: ILLMProvider) -> dict
     This node:
     - Invokes the configured LLM provider with message history
     - Handles errors gracefully
-    - Returns the generated response or error state
+    - Returns the full AIMessage (may include tool_calls)
 
     Args:
         state: Current conversation state
         llm_provider: LLM provider instance (injected dependency)
 
     Returns:
-        Dictionary with state updates (llm_response or error)
+        Dictionary with state updates (messages with AIMessage or error)
     """
     try:
         messages = state["messages"]
@@ -30,12 +30,13 @@ async def call_llm(state: ConversationState, llm_provider: ILLMProvider) -> dict
 
         logger.info(f"Calling LLM for conversation {conversation_id} with {len(messages)} messages")
 
-        response = await llm_provider.generate(messages)
+        # Invoke LLM - returns AIMessage (potentially with tool_calls)
+        response = await llm_provider.model.ainvoke(messages)
 
         logger.info(f"LLM response generated for conversation {conversation_id}")
 
         return {
-            "llm_response": response,
+            "messages": [response],
             "error": None
         }
 
