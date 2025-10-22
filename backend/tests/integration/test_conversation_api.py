@@ -3,6 +3,8 @@
 
 import pytest
 from httpx import AsyncClient
+import random
+import string
 
 
 @pytest.mark.integration
@@ -204,3 +206,9 @@ class TestConversationAPI:
         )
 
         assert update_resp.status_code == 404
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_ids():
+    """Setup random ID for test isolation."""
+    pytest.random_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
