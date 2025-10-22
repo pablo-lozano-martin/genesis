@@ -65,15 +65,16 @@ def create_chat_graph(
 
     # Add nodes
     graph_builder.add_node("process_input", process_user_input)
-    graph_builder.add_node(
-        "call_llm",
-        lambda state: call_llm(state, llm_provider)
-    )
+
+    async def call_llm_node(state: ConversationState) -> dict:
+        return await call_llm(state, llm_provider)
+
+    async def save_history_node(state: ConversationState) -> dict:
+        return await save_to_history(state, message_repository, conversation_repository)
+
+    graph_builder.add_node("call_llm", call_llm_node)
     graph_builder.add_node("tools", ToolNode(tools))
-    graph_builder.add_node(
-        "save_history",
-        lambda state: save_to_history(state, message_repository, conversation_repository)
-    )
+    graph_builder.add_node("save_history", save_history_node)
 
     # Add edges
     graph_builder.add_edge(START, "process_input")
