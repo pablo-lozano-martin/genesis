@@ -1,4 +1,4 @@
-# ABOUTME: WebSocket router for chat endpoints
+# ABOUTME: WebSocket router for chat endpoints with tool calling support
 # ABOUTME: Defines WebSocket routes with authentication and dependency injection
 
 from fastapi import APIRouter, WebSocket, WebSocketException
@@ -7,6 +7,7 @@ from app.infrastructure.security.websocket_auth import get_user_from_websocket
 from app.adapters.outbound.llm_providers.provider_factory import get_llm_provider
 from app.adapters.outbound.repositories.mongo_message_repository import MongoMessageRepository
 from app.adapters.outbound.repositories.mongo_conversation_repository import MongoConversationRepository
+from app.langgraph.tools import multiply
 from app.infrastructure.config.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -17,13 +18,13 @@ router = APIRouter()
 @router.websocket("/ws/chat")
 async def websocket_chat_endpoint(websocket: WebSocket):
     """
-    WebSocket endpoint for real-time chat streaming.
+    WebSocket endpoint for real-time chat with tool calling support.
 
     This endpoint:
     - Authenticates the user via token (query param or header)
     - Establishes a persistent WebSocket connection
     - Receives user messages
-    - Streams LLM responses token-by-token
+    - Executes LangGraph flow with tool calling capability
     - Persists all messages to the database
 
     Authentication:
@@ -32,7 +33,7 @@ async def websocket_chat_endpoint(websocket: WebSocket):
 
     Protocol:
     - Client sends: {"type": "message", "conversation_id": "uuid", "content": "..."}
-    - Server streams: {"type": "token", "content": "..."}
+    - Server sends: {"type": "token", "content": "..."}
     - Server completes: {"type": "complete", "message_id": "uuid", "conversation_id": "uuid"}
     - Server errors: {"type": "error", "message": "...", "code": "..."}
 
@@ -42,7 +43,9 @@ async def websocket_chat_endpoint(websocket: WebSocket):
     try:
         user = await get_user_from_websocket(websocket)
 
-        llm_provider = get_llm_provider()
+        # Create LLM provider with tools
+        tools = [multiply]
+        llm_provider = get_llm_provider(tools=tools)
         message_repository = MongoMessageRepository()
         conversation_repository = MongoConversationRepository()
 

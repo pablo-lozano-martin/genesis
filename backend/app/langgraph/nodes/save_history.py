@@ -1,62 +1,13 @@
 # ABOUTME: Node for persisting conversation messages to the database
 # ABOUTME: Saves user and assistant messages to message repository
 
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage
 from app.langgraph.state import ConversationState
 from app.core.ports.message_repository import IMessageRepository
 from app.core.ports.conversation_repository import IConversationRepository
-from app.core.domain.message import Message, MessageRole
+from app.langgraph.utils.message_converter import langchain_to_domain
 from app.infrastructure.config.logging_config import get_logger
 
 logger = get_logger(__name__)
-
-
-def _convert_to_domain(lc_message, conversation_id: str) -> Message:
-    """Convert LangChain message to domain Message.
-
-    Args:
-        lc_message: LangChain message (HumanMessage, AIMessage, ToolMessage, etc.)
-        conversation_id: ID of the conversation
-
-    Returns:
-        Domain Message object
-    """
-    if isinstance(lc_message, HumanMessage):
-        return Message(
-            conversation_id=conversation_id,
-            role=MessageRole.USER,
-            content=lc_message.content
-        )
-    elif isinstance(lc_message, AIMessage):
-        # Check if AIMessage has tool calls
-        metadata = None
-        if hasattr(lc_message, 'tool_calls') and lc_message.tool_calls:
-            metadata = {"tool_calls": lc_message.tool_calls}
-
-        return Message(
-            conversation_id=conversation_id,
-            role=MessageRole.ASSISTANT,
-            content=lc_message.content or "",
-            metadata=metadata
-        )
-    elif isinstance(lc_message, ToolMessage):
-        return Message(
-            conversation_id=conversation_id,
-            role=MessageRole.TOOL,
-            content=lc_message.content,
-            metadata={
-                "tool_call_id": lc_message.tool_call_id,
-                "name": getattr(lc_message, 'name', '')
-            }
-        )
-    elif isinstance(lc_message, SystemMessage):
-        return Message(
-            conversation_id=conversation_id,
-            role=MessageRole.SYSTEM,
-            content=lc_message.content
-        )
-    else:
-        raise ValueError(f"Unknown message type: {type(lc_message)}")
 
 
 async def save_to_history(
@@ -94,7 +45,7 @@ async def save_to_history(
         # Convert LangChain messages to domain Messages and save
         for lc_msg in langchain_messages:
             try:
-                domain_msg = _convert_to_domain(lc_msg, conversation_id)
+                domain_msg = langchain_to_domain(lc_msg, conversation_id)
                 await message_repository.create(domain_msg)
                 logger.debug(f"Saved message with role {domain_msg.role} to conversation {conversation_id}")
             except Exception as e:

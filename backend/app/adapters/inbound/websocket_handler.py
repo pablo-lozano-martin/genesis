@@ -1,5 +1,5 @@
-# ABOUTME: WebSocket handler for real-time chat streaming
-# ABOUTME: Manages WebSocket connections and streams LLM responses token-by-token
+# ABOUTME: WebSocket handler for real-time chat with tool calling support
+# ABOUTME: Manages WebSocket connections and executes LangGraph chat flow
 
 import json
 from typing import Dict
@@ -14,10 +14,11 @@ from app.adapters.inbound.websocket_schemas import (
     MessageType
 )
 from app.core.domain.user import User
-from app.core.domain.message import Message, MessageRole
 from app.core.ports.llm_provider import ILLMProvider
 from app.core.ports.message_repository import IMessageRepository
 from app.core.ports.conversation_repository import IConversationRepository
+from app.langgraph.graphs.chat_graph import create_chat_graph
+from app.langgraph.utils.message_converter import domain_to_langchain
 from app.infrastructure.config.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -116,45 +117,80 @@ async def handle_websocket_chat(
                     await manager.send_message(websocket, error_msg.model_dump())
                     continue
 
-                user_message = Message(
-                    conversation_id=conversation_id,
-                    role=MessageRole.USER,
-                    content=client_message.content
-                )
-
-                saved_user_message = await message_repository.create(user_message)
-                logger.info(f"Saved user message {saved_user_message.id} to conversation {conversation_id}")
-
-                messages = await message_repository.get_by_conversation_id(conversation_id)
-
-                full_response = []
                 try:
-                    async for token in llm_provider.stream(messages):
-                        full_response.append(token)
-                        token_msg = ServerTokenMessage(content=token)
+                    # Load existing conversation history
+                    domain_messages = await message_repository.get_by_conversation_id(conversation_id)
+
+                    # Convert domain messages to LangChain messages
+                    langchain_messages = domain_to_langchain(domain_messages)
+
+                    # Create chat graph with tool support
+                    graph = create_chat_graph(
+                        llm_provider=llm_provider,
+                        message_repository=message_repository,
+                        conversation_repository=conversation_repository
+                    )
+
+                    # Run the graph with user input (non-streaming for MVP)
+                    logger.info(f"Running graph for conversation {conversation_id}")
+                    result = await graph.ainvoke({
+                        "messages": langchain_messages,
+                        "conversation_id": conversation_id,
+                        "user_id": user.id,
+                        "current_input": client_message.content
+                    })
+
+                    # Check for errors
+                    if result.get("error"):
+                        logger.error(f"Graph execution error: {result['error']}")
+                        error_msg = ServerErrorMessage(
+                            message=result["error"],
+                            code="GRAPH_ERROR"
+                        )
+                        await manager.send_message(websocket, error_msg.model_dump())
+                        continue
+
+                    # Extract final AI response from graph result
+                    final_messages = result["messages"]
+
+                    # Find the last assistant message
+                    assistant_message = None
+                    for msg in reversed(final_messages):
+                        if hasattr(msg, 'type') and msg.type == 'ai':
+                            assistant_message = msg
+                            break
+
+                    if assistant_message and assistant_message.content:
+                        # Send the complete response (non-streaming for MVP)
+                        # We could send it as tokens to simulate streaming, but for MVP we send it all at once
+                        token_msg = ServerTokenMessage(content=assistant_message.content)
                         await manager.send_message(websocket, token_msg.model_dump())
 
-                    response_content = "".join(full_response)
+                        # Get the saved assistant message ID from the database
+                        # The graph already saved it, so we need to fetch it
+                        saved_messages = await message_repository.get_by_conversation_id(conversation_id)
+                        latest_assistant_msg = None
+                        for msg in reversed(saved_messages):
+                            if msg.role.value == "assistant":
+                                latest_assistant_msg = msg
+                                break
 
-                    assistant_message = Message(
-                        conversation_id=conversation_id,
-                        role=MessageRole.ASSISTANT,
-                        content=response_content
-                    )
-
-                    saved_assistant_message = await message_repository.create(assistant_message)
-                    logger.info(f"Saved assistant message {saved_assistant_message.id} to conversation {conversation_id}")
-
-                    await conversation_repository.increment_message_count(conversation_id, 2)
-
-                    complete_msg = ServerCompleteMessage(
-                        message_id=saved_assistant_message.id,
-                        conversation_id=conversation_id
-                    )
-                    await manager.send_message(websocket, complete_msg.model_dump())
+                        complete_msg = ServerCompleteMessage(
+                            message_id=latest_assistant_msg.id if latest_assistant_msg else "unknown",
+                            conversation_id=conversation_id
+                        )
+                        await manager.send_message(websocket, complete_msg.model_dump())
+                        logger.info(f"Graph execution completed for conversation {conversation_id}")
+                    else:
+                        logger.warning(f"No assistant response found in graph result")
+                        error_msg = ServerErrorMessage(
+                            message="No response generated",
+                            code="NO_RESPONSE"
+                        )
+                        await manager.send_message(websocket, error_msg.model_dump())
 
                 except Exception as e:
-                    logger.error(f"LLM streaming failed for user {user.id}: {e}")
+                    logger.error(f"Graph execution failed for user {user.id}: {e}", exc_info=True)
                     error_msg = ServerErrorMessage(
                         message=f"Failed to generate response: {str(e)}",
                         code="LLM_ERROR"
