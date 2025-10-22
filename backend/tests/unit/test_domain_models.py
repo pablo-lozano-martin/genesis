@@ -140,10 +140,21 @@ class TestMessageModel:
             role=MessageRole.SYSTEM,
             content="System message"
         )
+        tool_msg = Message(
+            conversation_id="conv123",
+            role=MessageRole.TOOL,
+            content="Tool result"
+        )
 
         assert user_msg.role == MessageRole.USER
         assert assistant_msg.role == MessageRole.ASSISTANT
         assert system_msg.role == MessageRole.SYSTEM
+        assert tool_msg.role == MessageRole.TOOL
+
+    def test_tool_role_enum_value(self):
+        """Test that TOOL role has correct enum value."""
+        assert MessageRole.TOOL == "tool"
+        assert MessageRole.TOOL.value == "tool"
 
     def test_message_empty_content(self):
         """Test message with empty content."""
