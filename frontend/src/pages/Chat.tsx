@@ -22,6 +22,7 @@ export const Chat: React.FC = () => {
     selectConversation,
     deleteConversation,
     sendMessage,
+    updateConversationTitle,
   } = useChat();
 
   return (
@@ -46,6 +47,7 @@ export const Chat: React.FC = () => {
           onSelect={selectConversation}
           onCreate={createConversation}
           onDelete={deleteConversation}
+          onRename={updateConversationTitle}
         />
 
         <div className="flex-1 flex flex-col bg-white">
