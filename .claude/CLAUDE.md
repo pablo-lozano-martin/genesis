@@ -55,6 +55,19 @@ NEVER use other agents apart from these.
   - `DEVELOPMENT.md` - Development workflow and commands.
 - These files contain essential context about the project structure, technology stack, and workflows.
 
+## Library Documentation (Context7 MCP)
+
+- YOU MUST ALWAYS use Context7 MCP tools for fetching up-to-date documentation for modern libraries.
+- When working with frameworks or libraries (especially LangGraph, LangChain, FastAPI, React, etc.), ALWAYS:
+  1. First call `mcp__context7__resolve-library-id` with the library name to get the Context7-compatible ID
+  2. Then call `mcp__context7__get-library-docs` with the resolved ID to fetch current documentation
+- Context7 provides the most current, accurate documentation including:
+  - Code examples and snippets
+  - API references
+  - Best practices and patterns
+  - Up-to-date version-specific guidance
+- NEVER rely solely on your training data for library usage patterns - always verify with Context7 first.
+
 ## Testing
 
 - Tests MUST comprehensively cover ALL implemented functionality. 
