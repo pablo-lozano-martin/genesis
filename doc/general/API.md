@@ -122,32 +122,49 @@ Get all messages in a conversation.
 - `limit` (int, default: 100, max: 500)
 
 **Returns**: Array of message objects (200)
+**Errors**: 403 (access denied), 404 (conversation not found)
 
-### WebSocket Endpoint
+#### Create Message
+`POST /api/conversations/{conversation_id}/messages`
 
-#### Real-time Chat
-`WS /ws/chat?token=<your-token>`
+Send a message and get AI assistant response.
 
-Stream messages to and from AI assistant in real-time.
-
-**Authentication**: Include token as query parameter or `Authorization` header.
-
-**Client → Server Messages**:
+**Body**:
 ```json
 {
-  "type": "message",
-  "conversation_id": "uuid",
-  "content": "User message"
+  "content": "Your message here",
+  "metadata": {}  // optional
 }
 ```
 
-**Server → Client Messages**:
-- `{ "type": "token", "content": "..." }` - Streaming token
-- `{ "type": "complete", "message_id": "uuid", "conversation_id": "uuid" }` - Complete
-- `{ "type": "error", "message": "...", "code": "..." }` - Error
-- `{ "type": "pong" }` - Ping response
+**Returns**: Message pair object (201)
+```json
+{
+  "user_message": {
+    "id": "507f1f77bcf86cd799439013",
+    "conversation_id": "507f1f77bcf86cd799439012",
+    "role": "user",
+    "content": "Your message here",
+    "created_at": "2025-01-15T10:30:00",
+    "metadata": null
+  },
+  "assistant_message": {
+    "id": "507f1f77bcf86cd799439014",
+    "conversation_id": "507f1f77bcf86cd799439012",
+    "role": "assistant",
+    "content": "AI response...",
+    "created_at": "2025-01-15T10:30:01",
+    "metadata": null
+  }
+}
+```
 
-**Error Codes**: `ACCESS_DENIED`, `INVALID_FORMAT`, `LLM_ERROR`, `INTERNAL_ERROR`
+**Errors**:
+- 401 (not authenticated)
+- 403 (access denied - not conversation owner)
+- 404 (conversation not found)
+- 422 (validation error - empty content)
+- 500 (LLM provider error)
 
 ### Health Check
 
