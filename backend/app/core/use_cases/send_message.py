@@ -41,7 +41,7 @@ class SendMessage:
         self.conversation_repository = conversation_repository
         self.llm_provider = llm_provider
 
-    async def execute(self, conversation_id: str, user_message_content: str) -> Message:
+    async def execute(self, conversation_id: str, user_message_content: str) -> tuple[Message, Message]:
         """
         Execute the send message use case.
 
@@ -50,7 +50,7 @@ class SendMessage:
             user_message_content: Content of the user's message
 
         Returns:
-            Assistant's response message
+            Tuple of (user_message, assistant_message)
 
         Raises:
             ValueError: If conversation doesn't exist or message is empty
@@ -67,7 +67,7 @@ class SendMessage:
             role=MessageRole.USER,
             content=user_message_content.strip()
         )
-        await self.message_repository.create(user_message)
+        saved_user_message = await self.message_repository.create(user_message)
 
         conversation_history = await self.message_repository.get_by_conversation_id(
             conversation_id
@@ -84,4 +84,4 @@ class SendMessage:
 
         await self.conversation_repository.increment_message_count(conversation_id, 2)
 
-        return assistant_message_entity
+        return (saved_user_message, assistant_message_entity)

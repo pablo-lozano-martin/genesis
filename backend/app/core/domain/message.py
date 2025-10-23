@@ -74,3 +74,64 @@ class MessageResponse(BaseModel):
                 "metadata": {"token_count": 8}
             }
         }
+
+
+class MessageCreateRequest(BaseModel):
+    """
+    REST API request schema for creating a message.
+
+    Used in POST /api/conversations/{id}/messages endpoint.
+    The conversation_id comes from the URL path.
+    The role is always 'user' for REST API (no user choice).
+    """
+    content: str = Field(
+        ...,
+        min_length=1,
+        max_length=10000,
+        description="Message content from user"
+    )
+    metadata: Optional[dict] = Field(
+        default=None,
+        description="Optional metadata associated with the message"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "content": "How do I use Python decorators?",
+                "metadata": None
+            }
+        }
+
+
+class MessagePairResponse(BaseModel):
+    """
+    Response containing both user and assistant messages.
+
+    Returned by POST /api/conversations/{id}/messages endpoint.
+    Both messages have been persisted to database.
+    """
+    user_message: MessageResponse
+    assistant_message: MessageResponse
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "user_message": {
+                    "id": "507f1f77bcf86cd799439013",
+                    "conversation_id": "507f1f77bcf86cd799439012",
+                    "role": "user",
+                    "content": "How do I use Python decorators?",
+                    "created_at": "2025-01-15T10:30:00",
+                    "metadata": None
+                },
+                "assistant_message": {
+                    "id": "507f1f77bcf86cd799439014",
+                    "conversation_id": "507f1f77bcf86cd799439012",
+                    "role": "assistant",
+                    "content": "Decorators are functions that modify...",
+                    "created_at": "2025-01-15T10:30:01",
+                    "metadata": None
+                }
+            }
+        }
