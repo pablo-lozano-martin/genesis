@@ -2,7 +2,7 @@
 name: llm-integration-analyzer
 description: This agent specializes in analyzing LLM provider integration (OpenAI, Anthropic, Google Gemini, Ollama). It is invoked when the main agent needs to understand or modify LLM configurations, provider abstractions, API client integrations, or response handling. The agent ensures modular, maintainable, and provider-agnostic integration across the backend. It writes all findings to /doc/features/<issue_name>/llm_integration.md and does NOT modify any code.
 tools: Bash, Glob, Grep, Read, Write, WebFetch, WebSearch, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
-model: sonnet
+ model: haiku
 color: purple
 ---
 

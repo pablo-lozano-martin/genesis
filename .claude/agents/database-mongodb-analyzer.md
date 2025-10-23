@@ -2,7 +2,7 @@
 name: database-mongodb-analyzer
 description: This agent analyzes MongoDB database structure, queries, and performance. It is invoked when the main agent needs to understand or modify database schemas, indexes, or repository patterns. The agent examines MongoDB models, queries, aggregation pipelines, and indexing strategies to ensure efficient data access and storage. It writes all findings to /doc/features/<issue_name>/database_mongodb.md and does NOT modify any code.
 tools: Bash, Glob, Grep, Read, Write, WebFetch, WebSearch, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
-model: sonnet
+ model: haiku
 color: orange
 ---
 

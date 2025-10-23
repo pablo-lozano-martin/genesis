@@ -2,7 +2,7 @@
 name: security-analyzer
 description: This agent analyzes security aspects of the backend and frontend. It is invoked when the main agent needs to understand or modify authentication, authorization, or sensitive data handling. The agent examines JWT authentication, middleware, API endpoint protections, CORS configuration, and encryption to ensure security best practices. It writes all findings to /doc/features/<issue_name>/security.md and does NOT modify any code.
 tools: Bash, Glob, Grep, Read, Write, WebFetch, WebSearch, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
-model: sonnet
+ model: haiku
 color: red
 ---
 

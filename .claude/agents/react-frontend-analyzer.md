@@ -2,7 +2,7 @@
 name: react-frontend-analyzer
 description: This agent analyzes React frontend architecture and application logic. It is invoked when the main agent needs to understand or modify state management, data flow, routing, or component organization. The agent examines React hooks, contexts, services, and page structures to ensure modular and maintainable frontend architecture. It writes all findings to /doc/features/<issue_name>/react_frontend.md and does NOT modify any code.
 tools: Bash, Glob, Grep, Read, Write, WebFetch, WebSearch, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
-model: sonnet
+ model: haiku
 color: teal
 ---
 

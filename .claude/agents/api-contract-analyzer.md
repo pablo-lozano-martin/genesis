@@ -2,7 +2,7 @@
 name: api-contract-analyzer
 description: This agent analyzes API contracts in a FastAPI backend. It is invoked during planning or implementation when the main agent needs to understand or modify API endpoints, routes, Pydantic schemas, and DTOs. The agent examines how data flows between the API layer and domain/frontend, identifies contract inconsistencies, and provides recommendations for validation, naming, and schema reuse. It writes all findings to /doc/features/<issue_name>/api_contract.md and does NOT modify any code.
 tools: Bash, Glob, Grep, Read, Write, WebFetch, WebSearch, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
-model: sonnet
+ model: haiku
 color: green
 ---
 

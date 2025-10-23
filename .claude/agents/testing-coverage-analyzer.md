@@ -2,7 +2,7 @@
 name: testing-coverage-analyzer
 description: This agent analyzes test coverage and testing strategy across the codebase. It is invoked when the main agent needs to understand test coverage gaps, validate testing approaches, or plan new tests. The agent examines unit tests, integration tests, and end-to-end tests to ensure critical paths and core modules are properly tested. It writes all findings to /doc/features/<issue_name>/testing_coverage.md and does NOT modify any code or tests.
 tools: Bash, Glob, Grep, Read, Write, WebFetch, WebSearch, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
-model: sonnet
+ model: haiku
 color: yellow
 ---
 

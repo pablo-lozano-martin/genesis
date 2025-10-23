@@ -2,7 +2,7 @@
 name: hexagonal-backend-analyzer
 description: This agent analyzes the backend from a Hexagonal Architecture (Ports & Adapters) perspective. It is invoked when the main agent needs guidance on architectural decisions, dependency flow, or layer boundaries during planning or implementation. The agent examines domain models, ports, adapters, and use cases to ensure proper separation of concerns and dependency inversion. It writes all findings to /doc/features/<issue_name>/backend_hexagonal.md and does NOT modify any code.
 tools: Bash, Glob, Grep, Read, Write, WebFetch, WebSearch, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
-model: sonnet
+ model: haiku
 color: pink
 ---
 

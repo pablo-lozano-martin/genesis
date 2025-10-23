@@ -2,7 +2,7 @@
 name: shadcn-ui-analyzer
 description: This agent analyzes React UI components built with Shadcn UI and TailwindCSS. It is invoked when the main agent needs to understand component architecture, validate UI patterns, or check accessibility and styling consistency. The agent examines component hierarchies, Shadcn primitives, TailwindCSS usage, and accessibility compliance. It writes all findings to /doc/features/<issue_name>/ui_components.md and does NOT modify any code.
 tools: Bash, Glob, Grep, Read, Edit, Write, NotebookEdit, WebFetch, TodoWrite, WebSearch, BashOutput, KillShell, AskUserQuestion, Skill, SlashCommand, mcp__context7__resolve-library-id, mcp__context7__get-library-docs, ListMcpResourcesTool, ReadMcpResourceTool, mcp__shadcn__get_project_registries, mcp__shadcn__list_items_in_registries, mcp__shadcn__search_items_in_registries, mcp__shadcn__view_items_in_registries, mcp__shadcn__get_item_examples_from_registries, mcp__shadcn__get_add_command_for_items, mcp__shadcn__get_audit_checklist, mcp__ide__getDiagnostics, mcp__ide__executeCode
-model: sonnet
+ model: haiku
 color: cyan
 ---
 

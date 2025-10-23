@@ -2,7 +2,7 @@
 name: [REPLACE_WITH_ANALYZER_NAME]
 description: [REPLACE_WITH_AGENT_DESCRIPTION (look other agents' description at .claude/agents to get inspiration)]
 tools: Bash, Glob, Grep, Read, Write, WebFetch, WebSearch, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
-model: sonnet
+ model: haiku
 color: [REPLACE_WITH_COLOR]
 ---
 

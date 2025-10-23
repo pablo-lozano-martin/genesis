@@ -2,7 +2,7 @@
 name: data-flow-analyzer
 description: This agent analyzes data flow across the backend system within hexagonal architecture. It is invoked when the main agent needs to understand how data moves between repositories, services, and APIs, or when planning changes that affect data transformations. The agent tracks data movement between components and identifies potential bottlenecks or leaks. It writes all findings to /doc/features/<issue_name>/data_flow.md and does NOT modify any code.
 tools: Bash, Glob, Grep, Read, Write, WebFetch, WebSearch, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
-model: sonnet
+ model: haiku
 color: blue
 ---
 
