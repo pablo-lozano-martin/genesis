@@ -86,6 +86,18 @@ export class ConversationService {
     });
     return response.data;
   }
+
+  async sendMessage(
+    conversationId: string,
+    content: string
+  ): Promise<{ user_message: Message; assistant_message: Message }> {
+    const response = await axios.post(
+      `${API_URL}/api/conversations/${conversationId}/messages`,
+      { content },
+      { headers: this.getAuthHeaders() }
+    );
+    return response.data;
+  }
 }
 
 export const conversationService = new ConversationService();

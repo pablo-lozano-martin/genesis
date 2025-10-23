@@ -1,22 +1,16 @@
 // ABOUTME: Chat context for managing conversation and message state
-// ABOUTME: Provides chat state and WebSocket integration to components
+// ABOUTME: Provides chat state and REST API integration to components
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { useWebSocket } from "../hooks/useWebSocket";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { conversationService } from "../services/conversationService";
 import type { Conversation, Message } from "../services/conversationService";
-import { authService } from "../services/authService";
 import { generateTitleFromMessage } from "../lib/titleUtils";
-
-const WS_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace("http", "ws");
 
 interface ChatContextType {
   conversations: Conversation[];
   currentConversation: Conversation | null;
   messages: Message[];
-  streamingMessage: string | null;
-  isStreaming: boolean;
-  isConnected: boolean;
+  isMessageLoading: boolean;
   error: string | null;
   loadConversations: () => Promise<void>;
   createConversation: () => Promise<void>;
@@ -32,31 +26,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [streamingMessage, setStreamingMessage] = useState<string | null>(null);
-  const [isStreaming, setIsStreaming] = useState(false);
-
-  const token = authService.getToken() || "";
-  const { isConnected, error, sendMessage: wsSendMessage, streamingMessage: wsStreamingMessage } = useWebSocket({
-    url: `${WS_URL}/ws/chat`,
-    token,
-    autoConnect: true,
-  });
-
-  useEffect(() => {
-    if (wsStreamingMessage) {
-      setStreamingMessage(wsStreamingMessage.content);
-      setIsStreaming(!wsStreamingMessage.isComplete);
-
-      if (wsStreamingMessage.isComplete) {
-        setTimeout(() => {
-          setStreamingMessage(null);
-          if (currentConversation) {
-            loadMessages(currentConversation.id);
-          }
-        }, 100);
-      }
-    }
-  }, [wsStreamingMessage]);
+  const [isMessageLoading, setIsMessageLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadConversations = async () => {
     try {
@@ -128,33 +99,36 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const sendMessage = (content: string) => {
-    if (!currentConversation || !isConnected) return;
+  const sendMessage = useCallback(
+    async (content: string) => {
+      if (!currentConversation || isMessageLoading) return;
 
-    // Detect if this is the first user message
-    const userMessages = messages.filter((m) => m.role === "user");
-    const isFirstMessage = userMessages.length === 0;
+      setIsMessageLoading(true);
+      setError(null);
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `temp-${Date.now()}`,
-        conversation_id: currentConversation.id,
-        role: "user",
-        content,
-        created_at: new Date().toISOString(),
-      },
-    ]);
+      try {
+        const { user_message, assistant_message } = await conversationService.sendMessage(
+          currentConversation.id,
+          content
+        );
 
-    setIsStreaming(true);
-    wsSendMessage(currentConversation.id, content);
+        setMessages((prev) => [...prev, user_message, assistant_message]);
 
-    // Auto-name if first message and title is still default
-    if (isFirstMessage && currentConversation.title === "New Chat") {
-      const autoTitle = generateTitleFromMessage(content);
-      updateConversationTitle(currentConversation.id, autoTitle);
-    }
-  };
+        // Auto-generate title on first message
+        if (currentConversation.message_count === 0) {
+          const newTitle = generateTitleFromMessage(content);
+          await updateConversationTitle(currentConversation.id, newTitle);
+        }
+
+        await loadConversations();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to send message");
+      } finally {
+        setIsMessageLoading(false);
+      }
+    },
+    [currentConversation, isMessageLoading]
+  );
 
   useEffect(() => {
     loadConversations();
@@ -166,9 +140,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         conversations,
         currentConversation,
         messages,
-        streamingMessage,
-        isStreaming,
-        isConnected,
+        isMessageLoading,
         error,
         loadConversations,
         createConversation,

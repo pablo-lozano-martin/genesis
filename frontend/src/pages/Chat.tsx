@@ -14,9 +14,7 @@ export const Chat: React.FC = () => {
     conversations,
     currentConversation,
     messages,
-    streamingMessage,
-    isStreaming,
-    isConnected,
+    isMessageLoading,
     error,
     createConversation,
     selectConversation,
@@ -63,16 +61,10 @@ export const Chat: React.FC = () => {
                 </div>
               )}
 
-              {!isConnected && (
-                <div className="bg-yellow-50 text-yellow-600 px-4 py-2 text-sm">
-                  Connecting...
-                </div>
-              )}
-
-              <MessageList messages={messages} streamingMessage={streamingMessage} isStreaming={isStreaming} />
+              <MessageList messages={messages} />
               <MessageInput
                 onSend={sendMessage}
-                disabled={!isConnected || isStreaming}
+                disabled={!currentConversation || isMessageLoading}
               />
             </>
           )}
