@@ -1,29 +1,29 @@
 # ABOUTME: LLM provider port interface defining the contract for LLM operations
-# ABOUTME: Abstract interface following hexagonal architecture principles
+# ABOUTME: Uses LangChain BaseMessage types for LangGraph-first architecture
 
 from abc import ABC, abstractmethod
 from typing import List, AsyncGenerator
-
-from app.core.domain.message import Message
+from langchain_core.messages import BaseMessage
 
 
 class ILLMProvider(ABC):
     """
     LLM provider port interface.
 
-    Defines the contract for LLM operations. Implementations of this
-    interface (adapters) handle the actual communication with different
-    LLM providers (OpenAI, Anthropic, Google, Ollama, etc.) without
+    Defines the contract for LLM operations using LangChain BaseMessage types.
+    Implementations of this interface (adapters) handle the actual communication
+    with different LLM providers (OpenAI, Anthropic, Google, Ollama, etc.) without
     the core domain knowing about provider-specific details.
     """
 
     @abstractmethod
-    async def generate(self, messages: List[Message]) -> str:
+    async def generate(self, messages: List[BaseMessage]) -> str:
         """
         Generate a response from the LLM based on conversation history.
 
         Args:
-            messages: List of messages representing the conversation history
+            messages: List of BaseMessage objects (HumanMessage, AIMessage, SystemMessage)
+                     representing the conversation history
 
         Returns:
             Generated response text
@@ -34,12 +34,12 @@ class ILLMProvider(ABC):
         pass
 
     @abstractmethod
-    async def stream(self, messages: List[Message]) -> AsyncGenerator[str, None]:
+    async def stream(self, messages: List[BaseMessage]) -> AsyncGenerator[str, None]:
         """
         Stream a response from the LLM token-by-token.
 
         Args:
-            messages: List of messages representing the conversation history
+            messages: List of BaseMessage objects representing the conversation history
 
         Yields:
             Response tokens as they are generated

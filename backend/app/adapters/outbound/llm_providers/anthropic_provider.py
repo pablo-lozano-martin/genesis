@@ -3,10 +3,9 @@
 
 from typing import List, AsyncGenerator
 from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from langchain_core.messages import BaseMessage
 
 from app.core.ports.llm_provider import ILLMProvider
-from app.core.domain.message import Message, MessageRole
 from app.infrastructure.config.settings import settings
 from app.infrastructure.config.logging_config import get_logger
 
@@ -43,33 +42,12 @@ class AnthropicProvider(ILLMProvider):
         )
         logger.info(f"Initialized Anthropic provider with model: {settings.anthropic_model}")
 
-    def _convert_messages(self, messages: List[Message]) -> List:
-        """
-        Convert domain Message objects to LangChain message format.
-
-        Args:
-            messages: List of domain message objects
-
-        Returns:
-            List of LangChain message objects
-        """
-        langchain_messages = []
-        for msg in messages:
-            if msg.role == MessageRole.USER:
-                langchain_messages.append(HumanMessage(content=msg.content))
-            elif msg.role == MessageRole.ASSISTANT:
-                langchain_messages.append(AIMessage(content=msg.content))
-            elif msg.role == MessageRole.SYSTEM:
-                langchain_messages.append(SystemMessage(content=msg.content))
-
-        return langchain_messages
-
-    async def generate(self, messages: List[Message]) -> str:
+    async def generate(self, messages: List[BaseMessage]) -> str:
         """
         Generate a response from Anthropic based on conversation history.
 
         Args:
-            messages: List of messages representing the conversation history
+            messages: List of BaseMessage objects representing the conversation history
 
         Returns:
             Generated response text
@@ -78,19 +56,18 @@ class AnthropicProvider(ILLMProvider):
             Exception: If LLM generation fails
         """
         try:
-            langchain_messages = self._convert_messages(messages)
-            response = await self.model.ainvoke(langchain_messages)
+            response = await self.model.ainvoke(messages)
             return response.content
         except Exception as e:
             logger.error(f"Anthropic generation failed: {e}")
             raise Exception(f"Failed to generate response from Anthropic: {str(e)}")
 
-    async def stream(self, messages: List[Message]) -> AsyncGenerator[str, None]:
+    async def stream(self, messages: List[BaseMessage]) -> AsyncGenerator[str, None]:
         """
         Stream a response from Anthropic token-by-token.
 
         Args:
-            messages: List of messages representing the conversation history
+            messages: List of BaseMessage objects representing the conversation history
 
         Yields:
             Response tokens as they are generated
@@ -99,8 +76,7 @@ class AnthropicProvider(ILLMProvider):
             Exception: If LLM streaming fails
         """
         try:
-            langchain_messages = self._convert_messages(messages)
-            async for chunk in self.model.astream(langchain_messages):
+            async for chunk in self.model.astream(messages):
                 if chunk.content:
                     yield chunk.content
         except Exception as e:

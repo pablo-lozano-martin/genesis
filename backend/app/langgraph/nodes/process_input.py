@@ -1,8 +1,8 @@
 # ABOUTME: Node for processing and validating user input messages
-# ABOUTME: Ensures input is clean and properly formatted before LLM processing
+# ABOUTME: Creates HumanMessage from user input for LangGraph-native message handling
 
+from langchain_core.messages import HumanMessage
 from app.langgraph.state import ConversationState
-from app.core.domain.message import Message, MessageRole
 from app.infrastructure.config.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -13,34 +13,33 @@ async def process_user_input(state: ConversationState) -> dict:
     Process and validate user input before sending to LLM.
 
     This node:
+    - Retrieves user input from the incoming state
     - Validates the input is not empty
-    - Creates a proper Message object with USER role
-    - Adds it to the message history
-    - Sets error state if validation fails
+    - Creates a LangChain HumanMessage object
+    - Adds it to the message history via MessagesState reducer
 
     Args:
         state: Current conversation state
 
     Returns:
-        Dictionary with state updates (messages or error)
+        Dictionary with messages list containing the HumanMessage
     """
-    current_input = state.get("current_input", "").strip()
+    # Get user input from state (passed during graph invocation)
+    user_input = state.get("user_input", "")
 
-    if not current_input:
+    if isinstance(user_input, str):
+        user_input = user_input.strip()
+
+    if not user_input:
         logger.warning(f"Empty input received for conversation {state['conversation_id']}")
-        return {
-            "error": "Input cannot be empty"
-        }
+        # Return empty update to allow error handling at graph level
+        return {}
 
     logger.info(f"Processing input for conversation {state['conversation_id']}")
 
-    user_message = Message(
-        conversation_id=state["conversation_id"],
-        role=MessageRole.USER,
-        content=current_input
-    )
+    # Create LangChain HumanMessage
+    message = HumanMessage(content=user_input)
 
     return {
-        "messages": [user_message],
-        "error": None
+        "messages": [message]
     }
