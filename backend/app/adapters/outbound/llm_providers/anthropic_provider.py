@@ -1,7 +1,7 @@
 # ABOUTME: Anthropic (Claude) LLM provider implementation using LangChain
 # ABOUTME: Implements ILLMProvider port interface for Anthropic models
 
-from typing import List, AsyncGenerator
+from typing import List, AsyncGenerator, Callable, Any
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import BaseMessage
 
@@ -42,7 +42,7 @@ class AnthropicProvider(ILLMProvider):
         )
         logger.info(f"Initialized Anthropic provider with model: {settings.anthropic_model}")
 
-    async def generate(self, messages: List[BaseMessage]) -> str:
+    async def generate(self, messages: List[BaseMessage]) -> BaseMessage:
         """
         Generate a response from Anthropic based on conversation history.
 
@@ -50,14 +50,14 @@ class AnthropicProvider(ILLMProvider):
             messages: List of BaseMessage objects representing the conversation history
 
         Returns:
-            Generated response text
+            Generated response as AIMessage (may include tool_calls)
 
         Raises:
             Exception: If LLM generation fails
         """
         try:
             response = await self.model.ainvoke(messages)
-            return response.content
+            return response
         except Exception as e:
             logger.error(f"Anthropic generation failed: {e}")
             raise Exception(f"Failed to generate response from Anthropic: {str(e)}")
@@ -91,3 +91,20 @@ class AnthropicProvider(ILLMProvider):
             Model name (e.g., "claude-3-sonnet-20240229")
         """
         return settings.anthropic_model
+
+    def bind_tools(self, tools: List[Callable], **kwargs: Any) -> 'ILLMProvider':
+        """
+        Bind tools to the Anthropic provider for tool calling.
+
+        Args:
+            tools: List of callable tools to bind
+            **kwargs: Additional keyword arguments for binding
+
+        Returns:
+            A new AnthropicProvider instance with tools bound
+        """
+        bound_model = self.model.bind_tools(tools, **kwargs)
+        # Create a new instance with the bound model
+        new_provider = AnthropicProvider.__new__(AnthropicProvider)
+        new_provider.model = bound_model
+        return new_provider

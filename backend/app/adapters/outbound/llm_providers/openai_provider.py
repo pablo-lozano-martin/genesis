@@ -1,7 +1,7 @@
 # ABOUTME: OpenAI LLM provider implementation using LangChain
 # ABOUTME: Implements ILLMProvider port interface for OpenAI models with native BaseMessage support
 
-from typing import List, AsyncGenerator
+from typing import List, AsyncGenerator, Callable, Any
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import BaseMessage
 
@@ -43,7 +43,7 @@ class OpenAIProvider(ILLMProvider):
         )
         logger.info(f"Initialized OpenAI provider with model: {settings.openai_model}")
 
-    async def generate(self, messages: List[BaseMessage]) -> str:
+    async def generate(self, messages: List[BaseMessage]) -> BaseMessage:
         """
         Generate a response from OpenAI based on conversation history.
 
@@ -51,14 +51,14 @@ class OpenAIProvider(ILLMProvider):
             messages: List of BaseMessage objects representing the conversation history
 
         Returns:
-            Generated response text
+            Generated response as AIMessage (may include tool_calls)
 
         Raises:
             Exception: If LLM generation fails
         """
         try:
             response = await self.model.ainvoke(messages)
-            return response.content
+            return response
         except Exception as e:
             logger.error(f"OpenAI generation failed: {e}")
             raise Exception(f"Failed to generate response from OpenAI: {str(e)}")
@@ -92,3 +92,21 @@ class OpenAIProvider(ILLMProvider):
             Model name (e.g., "gpt-4-turbo-preview")
         """
         return settings.openai_model
+
+    def bind_tools(self, tools: List[Callable], **kwargs: Any) -> 'ILLMProvider':
+        """
+        Bind tools to the OpenAI provider for tool calling.
+
+        Args:
+            tools: List of callable tools to bind
+            **kwargs: Additional keyword arguments for binding
+
+        Returns:
+            A new OpenAIProvider instance with tools bound
+        """
+        bound_model = self.model.bind_tools(tools, **kwargs)
+        # Create a new instance with the bound model
+        new_provider = OpenAIProvider.__new__(OpenAIProvider)
+        new_provider.model = bound_model
+        # Copy other attributes if needed, but for now, model is the main one
+        return new_provider

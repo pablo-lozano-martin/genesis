@@ -1,7 +1,7 @@
 # ABOUTME: Google Gemini LLM provider implementation using LangChain
 # ABOUTME: Implements ILLMProvider port interface for Google Gemini models with native BaseMessage support
 
-from typing import List, AsyncGenerator
+from typing import List, AsyncGenerator, Callable, Any
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import BaseMessage
 
@@ -43,7 +43,7 @@ class GeminiProvider(ILLMProvider):
         )
         logger.info(f"Initialized Gemini provider with model: {settings.google_model}")
 
-    async def generate(self, messages: List[BaseMessage]) -> str:
+    async def generate(self, messages: List[BaseMessage]) -> BaseMessage:
         """
         Generate a response from Gemini based on conversation history.
 
@@ -51,14 +51,14 @@ class GeminiProvider(ILLMProvider):
             messages: List of BaseMessage objects representing the conversation history
 
         Returns:
-            Generated response text
+            Generated response as AIMessage (may include tool_calls)
 
         Raises:
             Exception: If LLM generation fails
         """
         try:
             response = await self.model.ainvoke(messages)
-            return response.content
+            return response
         except Exception as e:
             logger.error(f"Gemini generation failed: {e}")
             raise Exception(f"Failed to generate response from Gemini: {str(e)}")
@@ -92,3 +92,20 @@ class GeminiProvider(ILLMProvider):
             Model name (e.g., "gemini-2.0-flash")
         """
         return settings.google_model
+
+    def bind_tools(self, tools: List[Callable], **kwargs: Any) -> 'ILLMProvider':
+        """
+        Bind tools to the Gemini provider for tool calling.
+
+        Args:
+            tools: List of callable tools to bind
+            **kwargs: Additional keyword arguments for binding
+
+        Returns:
+            A new GeminiProvider instance with tools bound
+        """
+        bound_model = self.model.bind_tools(tools, **kwargs)
+        # Create a new instance with the bound model
+        new_provider = GeminiProvider.__new__(GeminiProvider)
+        new_provider.model = bound_model
+        return new_provider

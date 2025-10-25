@@ -3,10 +3,13 @@
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.mongodb.aio import AsyncMongoDBSaver
+from langgraph.prebuilt import ToolNode, tools_condition
 from app.langgraph.state import ConversationState
 from app.langgraph.nodes.process_input import process_user_input
 from app.langgraph.nodes.call_llm import call_llm
 from app.infrastructure.config.logging_config import get_logger
+from app.langgraph.tools.multiply import multiply
+
 
 logger = get_logger(__name__)
 
@@ -33,14 +36,18 @@ def create_chat_graph(checkpointer: AsyncMongoDBSaver):
 
     graph_builder = StateGraph(ConversationState)
 
+    tools = [multiply]
+
     # Add nodes (no format_response, no save_history - automatic now)
     graph_builder.add_node("process_input", process_user_input)
     graph_builder.add_node("call_llm", call_llm)
+    graph_builder.add_node("tools", ToolNode(tools))
 
     # Define edges
     graph_builder.add_edge(START, "process_input")
     graph_builder.add_edge("process_input", "call_llm")
-    graph_builder.add_edge("call_llm", END)
+    graph_builder.add_conditional_edges("call_llm", tools_condition)
+    graph_builder.add_edge("tools", "call_llm")
 
     # Compile with checkpointer for automatic state persistence
     graph = graph_builder.compile(checkpointer=checkpointer)

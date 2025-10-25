@@ -4,6 +4,7 @@
 from langgraph.types import RunnableConfig
 from langchain_core.messages import AIMessage
 from app.langgraph.state import ConversationState
+from app.langgraph.tools.multiply import multiply
 from app.infrastructure.config.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -30,16 +31,16 @@ async def call_llm(state: ConversationState, config: RunnableConfig) -> dict:
 
     logger.info(f"Calling LLM for conversation {conversation_id} with {len(messages)} messages")
 
+    tools = [multiply]
+
     # Get LLM provider from config
     llm_provider = config["configurable"]["llm_provider"]
+    llm_provider_with_tools = llm_provider.bind_tools(tools, parallel_tool_calls=False)
 
-    # Generate response (llm_provider.generate should work with BaseMessage types)
-    response_content = await llm_provider.generate(messages)
+    # Generate response (llm_provider_with_tools.generate should work with BaseMessage types)
+    ai_message = await llm_provider_with_tools.generate(messages)
 
     logger.info(f"LLM response generated for conversation {conversation_id}")
-
-    # Create AIMessage with the response
-    ai_message = AIMessage(content=response_content)
 
     return {
         "messages": [ai_message]

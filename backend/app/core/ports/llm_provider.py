@@ -2,7 +2,7 @@
 # ABOUTME: Uses LangChain BaseMessage types for LangGraph-first architecture
 
 from abc import ABC, abstractmethod
-from typing import List, AsyncGenerator
+from typing import List, AsyncGenerator, Callable, Any
 from langchain_core.messages import BaseMessage
 
 
@@ -17,7 +17,7 @@ class ILLMProvider(ABC):
     """
 
     @abstractmethod
-    async def generate(self, messages: List[BaseMessage]) -> str:
+    async def generate(self, messages: List[BaseMessage]) -> BaseMessage:
         """
         Generate a response from the LLM based on conversation history.
 
@@ -26,7 +26,7 @@ class ILLMProvider(ABC):
                      representing the conversation history
 
         Returns:
-            Generated response text
+            Generated response as BaseMessage (AIMessage with content and tool_calls if applicable)
 
         Raises:
             Exception: If LLM generation fails
@@ -56,5 +56,19 @@ class ILLMProvider(ABC):
 
         Returns:
             Model name (e.g., "gpt-4-turbo-preview", "claude-3-sonnet-20240229")
+        """
+        pass
+
+    @abstractmethod
+    def bind_tools(self, tools: List[Callable], **kwargs: Any) -> 'ILLMProvider':
+        """
+        Bind tools to the LLM provider for tool calling.
+
+        Args:
+            tools: List of callable tools to bind
+            **kwargs: Additional keyword arguments for binding
+
+        Returns:
+            A new ILLMProvider instance with tools bound
         """
         pass
