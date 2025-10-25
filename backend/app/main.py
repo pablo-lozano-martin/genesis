@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.infrastructure.config.settings import settings
 from app.infrastructure.config.logging_config import setup_logging, get_logger
-from app.infrastructure.database.mongodb import MongoDB, AppDatabase, LangGraphDatabase
+from app.infrastructure.database.mongodb import MongoDB, AppDatabase
 from app.infrastructure.database.langgraph_checkpointer import get_checkpointer
 from app.adapters.inbound.auth_router import router as auth_router
 from app.adapters.inbound.user_router import router as user_router
@@ -38,10 +38,7 @@ async def lifespan(app: FastAPI):
         ConversationDocument
     ])
 
-    # Connect to LangGraph Database
-    await LangGraphDatabase.connect()
-
-    # Initialize LangGraph checkpointer
+    # Initialize LangGraph checkpointer (manages its own MongoDB connection)
     checkpointer = await get_checkpointer()
     app.state.checkpointer = checkpointer
 
@@ -60,7 +57,7 @@ async def lifespan(app: FastAPI):
     # Shutdown: Close database connections
     logger.info("Shutting down application")
     await AppDatabase.close()
-    await LangGraphDatabase.close()
+    # AsyncMongoDBSaver manages its own connection lifecycle
     logger.info("Application shutdown complete")
 
 
