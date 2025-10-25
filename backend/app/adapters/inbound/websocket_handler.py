@@ -1,9 +1,10 @@
-# ABOUTME: WebSocket handler for real-time chat streaming
-# ABOUTME: Manages WebSocket connections and streams LLM responses token-by-token
+# ABOUTME: WebSocket handler for real-time chat streaming using LangGraph
+# ABOUTME: Uses graph.astream_events() for token-by-token streaming with automatic checkpointing
 
 import json
 from typing import Dict
 from fastapi import WebSocket, WebSocketDisconnect
+from langgraph.types import RunnableConfig
 from app.adapters.inbound.websocket_schemas import (
     ClientMessage,
     ServerTokenMessage,
@@ -14,9 +15,7 @@ from app.adapters.inbound.websocket_schemas import (
     MessageType
 )
 from app.core.domain.user import User
-from app.core.domain.message import Message, MessageRole
 from app.core.ports.llm_provider import ILLMProvider
-from app.core.ports.message_repository import IMessageRepository
 from app.core.ports.conversation_repository import IConversationRepository
 from app.infrastructure.config.logging_config import get_logger
 
@@ -56,26 +55,26 @@ manager = ConnectionManager()
 async def handle_websocket_chat(
     websocket: WebSocket,
     user: User,
+    graph,
     llm_provider: ILLMProvider,
-    message_repository: IMessageRepository,
     conversation_repository: IConversationRepository
 ):
     """
-    Handle WebSocket chat session for a user.
+    Handle WebSocket chat session for a user using LangGraph.
 
     This function:
     - Establishes the WebSocket connection
     - Receives user messages
-    - Streams LLM responses token-by-token
-    - Persists messages to the database
+    - Streams LLM responses token-by-token via graph.astream_events()
+    - Messages are automatically persisted via LangGraph checkpointer
     - Handles errors and disconnections
 
     Args:
         websocket: WebSocket connection instance
         user: Authenticated user
+        graph: Compiled LangGraph instance with checkpointing
         llm_provider: LLM provider for generating responses
-        message_repository: Repository for persisting messages
-        conversation_repository: Repository for conversation metadata
+        conversation_repository: Repository for conversation ownership verification
     """
     await manager.connect(websocket, user.id)
 
@@ -107,6 +106,7 @@ async def handle_websocket_chat(
                 conversation_id = client_message.conversation_id
                 conversation = await conversation_repository.get_by_id(conversation_id)
 
+                # Verify conversation ownership (authorization at App DB layer)
                 if not conversation or conversation.user_id != user.id:
                     logger.warning(f"User {user.id} attempted to access conversation {conversation_id}")
                     error_msg = ServerErrorMessage(
@@ -116,45 +116,46 @@ async def handle_websocket_chat(
                     await manager.send_message(websocket, error_msg.model_dump())
                     continue
 
-                user_message = Message(
-                    conversation_id=conversation_id,
-                    role=MessageRole.USER,
-                    content=client_message.content
+                # Create RunnableConfig with thread_id (conversation.id) and llm_provider
+                config = RunnableConfig(
+                    configurable={
+                        "thread_id": conversation.id,
+                        "llm_provider": llm_provider,
+                        "user_id": user.id
+                    }
                 )
 
-                saved_user_message = await message_repository.create(user_message)
-                logger.info(f"Saved user message {saved_user_message.id} to conversation {conversation_id}")
+                # Prepare input for graph
+                input_data = {
+                    "user_input": client_message.content,
+                    "conversation_id": conversation.id,
+                    "user_id": user.id
+                }
 
-                messages = await message_repository.get_by_conversation_id(conversation_id)
+                logger.info(f"Starting LangGraph streaming for conversation {conversation_id}")
 
-                full_response = []
                 try:
-                    async for token in llm_provider.stream(messages):
-                        full_response.append(token)
-                        token_msg = ServerTokenMessage(content=token)
-                        await manager.send_message(websocket, token_msg.model_dump())
+                    # Stream LLM tokens using graph.astream_events()
+                    # Checkpointing happens automatically
+                    async for event in graph.astream_events(input_data, config, version="v2"):
+                        # Stream tokens from LLM to client
+                        if event["event"] == "on_chat_model_stream":
+                            chunk = event["data"]["chunk"]
+                            if hasattr(chunk, 'content') and chunk.content:
+                                token_msg = ServerTokenMessage(content=chunk.content)
+                                await manager.send_message(websocket, token_msg.model_dump())
 
-                    response_content = "".join(full_response)
+                    logger.info(f"LangGraph streaming completed for conversation {conversation_id}")
 
-                    assistant_message = Message(
-                        conversation_id=conversation_id,
-                        role=MessageRole.ASSISTANT,
-                        content=response_content
-                    )
-
-                    saved_assistant_message = await message_repository.create(assistant_message)
-                    logger.info(f"Saved assistant message {saved_assistant_message.id} to conversation {conversation_id}")
-
-                    await conversation_repository.increment_message_count(conversation_id, 2)
-
+                    # Send completion message (checkpointing already done)
                     complete_msg = ServerCompleteMessage(
-                        message_id=saved_assistant_message.id,
+                        message_id=None,  # No longer tracking individual message IDs
                         conversation_id=conversation_id
                     )
                     await manager.send_message(websocket, complete_msg.model_dump())
 
                 except Exception as e:
-                    logger.error(f"LLM streaming failed for user {user.id}: {e}")
+                    logger.error(f"LangGraph streaming failed for user {user.id}: {e}")
                     error_msg = ServerErrorMessage(
                         message=f"Failed to generate response: {str(e)}",
                         code="LLM_ERROR"

@@ -10,7 +10,6 @@ from unittest.mock import AsyncMock, MagicMock
 from app.main import create_app
 from app.core.domain.user import User, UserCreate
 from app.core.domain.conversation import Conversation
-from app.core.domain.message import Message, MessageRole
 from app.infrastructure.security.auth_service import AuthService
 
 
@@ -92,17 +91,6 @@ def sample_conversation(sample_user: User) -> Conversation:
         user_id=sample_user.id,
         title="Test Conversation",
         message_count=0
-    )
-
-
-@pytest.fixture
-def sample_message(sample_conversation: Conversation) -> Message:
-    """Create a sample message for testing."""
-    return Message(
-        id="test-message-id",
-        conversation_id=sample_conversation.id,
-        role=MessageRole.USER,
-        content="Test message content"
     )
 
 

@@ -12,7 +12,7 @@ export interface Conversation {
   title: string;
   created_at: string;
   updated_at: string;
-  message_count: number;
+  message_count?: number;  // Optional - may not be present with LangGraph architecture
 }
 
 export interface Message {

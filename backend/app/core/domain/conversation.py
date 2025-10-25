@@ -19,7 +19,7 @@ class Conversation(BaseModel):
     title: str = Field(default="New Conversation", max_length=200, description="Conversation title")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Conversation creation timestamp")
     updated_at: datetime = Field(default_factory=datetime.utcnow, description="Last update timestamp")
-    message_count: int = Field(default=0, ge=0, description="Total number of messages in conversation")
+    message_count: Optional[int] = Field(default=None, ge=0, description="Total number of messages (deprecated - count from LangGraph state instead)")
 
     class Config:
         json_schema_extra = {
@@ -54,7 +54,7 @@ class ConversationResponse(BaseModel):
     title: str
     created_at: datetime
     updated_at: datetime
-    message_count: int
+    message_count: Optional[int] = None  # Optional for backward compatibility
 
     class Config:
         json_schema_extra = {
