@@ -154,7 +154,7 @@ async def handle_websocket_chat(
 
                     # Send completion message (checkpointing already done)
                     complete_msg = ServerCompleteMessage(
-                        message_id=None,  # No longer tracking individual message IDs
+                        message_id="unknown",  # No longer tracking individual message IDs
                         conversation_id=conversation_id
                     )
                     await manager.send_message(websocket, complete_msg.model_dump())
