@@ -68,6 +68,8 @@ async def get_messages_endpoint(
             role = MessageRole.ASSISTANT
         elif msg.type == "system":
             role = MessageRole.SYSTEM
+        elif msg.type == "tool":
+            role = MessageRole.TOOL
         else:
             role = MessageRole.USER  # Default fallback
 

@@ -19,7 +19,7 @@ async def get_conversation_messages(graph, conversation_id: str) -> List[BaseMes
 
     Returns:
         List of BaseMessage objects (HumanMessage, AIMessage, SystemMessage)
-        representing the conversation history
+        representing the complete conversation history including tool calls.
     """
     try:
         # Create config with thread_id (conversation.id)
@@ -34,7 +34,7 @@ async def get_conversation_messages(graph, conversation_id: str) -> List[BaseMes
         messages = state.values.get("messages", [])
 
         logger.info(f"Retrieved {len(messages)} messages for conversation {conversation_id}")
-
+        
         return messages
 
     except Exception as e:
