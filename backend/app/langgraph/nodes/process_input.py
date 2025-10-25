@@ -1,7 +1,6 @@
-# ABOUTME: Node for processing and validating user input messages
-# ABOUTME: Creates HumanMessage from user input for LangGraph-native message handling
+# ABOUTME: Node for validating incoming messages before LLM processing
+# ABOUTME: Validates messages exist in state for LangGraph-native message handling
 
-from langchain_core.messages import HumanMessage
 from app.langgraph.state import ConversationState
 from app.infrastructure.config.logging_config import get_logger
 
@@ -10,36 +9,26 @@ logger = get_logger(__name__)
 
 async def process_user_input(state: ConversationState) -> dict:
     """
-    Process and validate user input before sending to LLM.
+    Validate that messages exist in state before proceeding to LLM.
 
-    This node:
-    - Retrieves user input from the incoming state
-    - Validates the input is not empty
-    - Creates a LangChain HumanMessage object
-    - Adds it to the message history via MessagesState reducer
+    With LangGraph-first architecture, HumanMessage is created in the WebSocket
+    handler and passed in the messages field. This node validates the state
+    has messages before proceeding to the LLM node.
 
     Args:
-        state: Current conversation state
+        state: Current conversation state with messages from MessagesState
 
     Returns:
-        Dictionary with messages list containing the HumanMessage
+        Empty dict (no state update needed, just validation)
     """
-    # Get user input from state (passed during graph invocation)
-    user_input = state.get("user_input", "")
+    messages = state.get("messages", [])
+    conversation_id = state.get("conversation_id", "unknown")
 
-    if isinstance(user_input, str):
-        user_input = user_input.strip()
+    logger.info(f"Validating input for conversation {conversation_id}: {len(messages)} messages in state")
 
-    if not user_input:
-        logger.warning(f"Empty input received for conversation {state['conversation_id']}")
-        # Return empty update to allow error handling at graph level
-        return {}
+    if not messages:
+        logger.warning(f"No messages in state for conversation {conversation_id}")
+        raise ValueError("No messages provided in state")
 
-    logger.info(f"Processing input for conversation {state['conversation_id']}")
-
-    # Create LangChain HumanMessage
-    message = HumanMessage(content=user_input)
-
-    return {
-        "messages": [message]
-    }
+    # Validation passed, no state update needed
+    return {}

@@ -5,6 +5,7 @@ import json
 from typing import Dict
 from fastapi import WebSocket, WebSocketDisconnect
 from langgraph.types import RunnableConfig
+from langchain_core.messages import HumanMessage
 from app.adapters.inbound.websocket_schemas import (
     ClientMessage,
     ServerTokenMessage,
@@ -125,14 +126,18 @@ async def handle_websocket_chat(
                     }
                 )
 
-                # Prepare input for graph
+                # Prepare input for graph (MessagesState expects 'messages' field)
+                # Create HumanMessage directly as per LangGraph-first architecture
+                human_message = HumanMessage(content=client_message.content)
+
                 input_data = {
-                    "user_input": client_message.content,
+                    "messages": [human_message],
                     "conversation_id": conversation.id,
                     "user_id": user.id
                 }
 
                 logger.info(f"Starting LangGraph streaming for conversation {conversation_id}")
+                logger.info(f"Input prepared: HumanMessage with content='{client_message.content[:50] if client_message.content else 'EMPTY'}'")
 
                 try:
                     # Stream LLM tokens using graph.astream_events()
