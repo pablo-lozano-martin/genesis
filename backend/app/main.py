@@ -38,8 +38,9 @@ async def lifespan(app: FastAPI):
         ConversationDocument
     ])
 
-    # Initialize LangGraph checkpointer (manages its own MongoDB connection)
-    checkpointer = await get_checkpointer()
+    # Initialize LangGraph checkpointer with proper lifecycle management
+    checkpointer_context, checkpointer = await get_checkpointer()
+    app.state.checkpointer_context = checkpointer_context
     app.state.checkpointer = checkpointer
 
     # Compile LangGraph graphs with checkpointer
@@ -57,7 +58,8 @@ async def lifespan(app: FastAPI):
     # Shutdown: Close database connections
     logger.info("Shutting down application")
     await AppDatabase.close()
-    # AsyncMongoDBSaver manages its own connection lifecycle
+    # Properly exit AsyncMongoDBSaver context manager
+    await checkpointer_context.__aexit__(None, None, None)
     logger.info("Application shutdown complete")
 
 
