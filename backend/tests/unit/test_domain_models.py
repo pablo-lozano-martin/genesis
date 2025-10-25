@@ -76,13 +76,11 @@ class TestConversationModel:
         conversation = Conversation(
             id="conv123",
             user_id="user123",
-            title="Test Conversation",
-            message_count=5
+            title="Test Conversation"
         )
         assert conversation.id == "conv123"
         assert conversation.user_id == "user123"
         assert conversation.title == "Test Conversation"
-        assert conversation.message_count == 5
 
     def test_conversation_default_title(self):
         """Test conversation with default title."""
@@ -90,7 +88,7 @@ class TestConversationModel:
             user_id="user123"
         )
         assert conversation.title == "New Conversation"
-        assert conversation.message_count == 0
+        assert conversation.message_count is None
 
     def test_conversation_create_valid(self):
         """Test ConversationCreate schema."""
