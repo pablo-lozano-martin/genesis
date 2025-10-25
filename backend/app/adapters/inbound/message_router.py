@@ -5,7 +5,7 @@ from typing import List
 from uuid import uuid4
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, status, Query, Request
-from app.core.domain.message import MessageResponse, MessageRole
+from app.adapters.inbound.message_schemas import MessageResponse, MessageRole
 from app.infrastructure.security.dependencies import CurrentUser
 from app.adapters.outbound.repositories.mongo_conversation_repository import MongoConversationRepository
 from app.langgraph.state_retrieval import get_conversation_messages

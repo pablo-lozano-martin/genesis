@@ -29,15 +29,13 @@ async def lifespan(app: FastAPI):
     # Startup: Connect to databases and register Beanie document models
     from app.adapters.outbound.repositories.mongo_models import (
         UserDocument,
-        ConversationDocument,
-        MessageDocument
+        ConversationDocument
     )
 
     # Connect to App Database (for backward compatibility, also use MongoDB alias)
     await AppDatabase.connect(document_models=[
         UserDocument,
-        ConversationDocument,
-        MessageDocument
+        ConversationDocument
     ])
 
     # Connect to LangGraph Database
