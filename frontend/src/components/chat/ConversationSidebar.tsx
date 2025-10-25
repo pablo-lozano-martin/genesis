@@ -100,9 +100,11 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                     {conv.title}
                   </div>
                 )}
-                <div className="text-xs text-gray-500 mt-1">
-                  {conv.message_count} messages
-                </div>
+                {conv.message_count !== undefined && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    {conv.message_count} messages
+                  </div>
+                )}
               </div>
               <button
                 onClick={(e) => {
