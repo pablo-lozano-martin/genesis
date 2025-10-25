@@ -33,13 +33,14 @@ Genesis uses hexagonal architecture (ports and adapters) to create clean separat
 
 **Pure business logic with zero infrastructure dependencies.**
 
-- **Domain Models** (`domain/`): User, Conversation, Message entities
+- **Domain Models** (`domain/`): User, Conversation entities
 - **Ports** (`ports/`): Interfaces defining contracts
-  - `IUserRepository`, `IConversationRepository`, `IMessageRepository`
+  - `IUserRepository`, `IConversationRepository`
   - `ILLMProvider`: Abstract LLM interface
   - `IAuthService`: Authentication interface
 - **Use Cases** (`use_cases/`): Business logic implementations
-  - `RegisterUser`, `AuthenticateUser`, `CreateConversation`, `SendMessage`
+  - `RegisterUser`, `AuthenticateUser`, `CreateConversation`
+  - Note: Message handling is now done through LangGraph with native checkpointing
 
 ### Adapters
 
@@ -52,10 +53,11 @@ Genesis uses hexagonal architecture (ports and adapters) to create clean separat
 
 **Outbound** (`app/adapters/outbound/`):
 - **Repositories**: MongoDB implementations
-  - `MongoUserRepository`, `MongoConversationRepository`, `MongoMessageRepository`
-- **LLM Providers**: Multiple provider implementations
+  - `MongoUserRepository`, `MongoConversationRepository`
+  - Note: Messages are stored in LangGraph checkpoints (no repository needed)
+- **LLM Providers**: Multiple provider implementations using LangChain BaseMessage types
   - `OpenAIProvider`, `AnthropicProvider`, `GeminiProvider`, `OllamaProvider`
-  - All implement `ILLMProvider` interface
+  - All implement `ILLMProvider` interface and work directly with BaseMessage
 
 ### Infrastructure (`app/infrastructure/`)
 
@@ -63,22 +65,25 @@ Genesis uses hexagonal architecture (ports and adapters) to create clean separat
 
 - **Config**: Environment variables, settings
 - **Security**: JWT authentication, password hashing
-- **Database**: MongoDB connection management
+- **Database**: Two-database MongoDB connection management
+  - `AppDatabase`: User accounts and conversation metadata
+  - `LangGraphDatabase`: Message history via checkpoints
 - **Logging**: Centralized logging
 
 ### LangGraph (`app/langgraph/`)
 
-**Conversation flow orchestration.**
+**LangGraph-first conversation flow orchestration.**
 
-- **State** (`state.py`): Conversation state schema
+- **State** (`state.py`): Extends LangGraph's native `MessagesState`
 - **Nodes** (`nodes/`): Processing nodes
-  - `process_user_input`: Input validation
-  - `call_llm`: LLM invocation
-  - `format_response`: Response formatting
-  - `save_to_history`: Message persistence
-- **Graphs** (`graphs/`): Flow definitions
+  - `process_user_input`: Creates HumanMessage from input
+  - `call_llm`: LLM invocation with BaseMessage types
+  - `format_response`: Creates AIMessage from response
+  - Note: Message persistence is automatic via LangGraph checkpointing
+- **Graphs** (`graphs/`): Flow definitions compiled with checkpointer
   - `chat_graph.py`: Main conversation flow
-  - `streaming_chat_graph.py`: Streaming support
+  - `streaming_chat_graph.py`: Streaming support via astream_events()
+- **Checkpointer** (`langgraph_checkpointer.py`): AsyncMongoDBSaver integration
 
 ## Why Hexagonal Architecture?
 
@@ -93,6 +98,74 @@ Genesis uses hexagonal architecture (ports and adapters) to create clean separat
 - May feel over-engineered for simple use cases
 
 **Verdict**: Worth it for maintainable, extensible systems.
+
+## Two-Database Pattern
+
+Genesis implements a clean separation between application data and AI execution state using two MongoDB databases:
+
+```
+┌──────────────────────────────────────────────────────┐
+│                   WebSocket Handler                  │
+│         Uses LangGraph graphs exclusively            │
+│         Calls graph.astream() for streaming          │
+│         Checkpointing is automatic                   │
+└────────────────┬─────────────────┬───────────────────┘
+                 │                 │
+                 ↓                 ↓
+    ┌─────────────────────┐  ┌──────────────────────┐
+    │  App Database (MongoDB) │  │ LangGraph DB (MongoDB) │
+    │  • users            │  │ • langgraph_checkpoints│
+    │  • conversations    │  │ • langgraph_stores     │
+    │    (metadata only)  │  │   (message history)    │
+    └─────────────────────┘  └──────────────────────┘
+```
+
+### App Database (genesis_app)
+**Purpose**: User accounts and conversation metadata
+
+**Collections**:
+- `users`: User authentication and profiles
+- `conversations`: Conversation metadata (id, user_id, title, timestamps)
+  - Note: `message_count` field is optional (for backward compatibility)
+
+**Environment Variables**:
+- `MONGODB_APP_URL`: Connection string for app database
+- `MONGODB_APP_DB_NAME`: Database name (default: genesis_app)
+
+### LangGraph Database (genesis_langgraph)
+**Purpose**: AI conversation execution state and message history
+
+**Collections** (managed by LangGraph):
+- `langgraph_checkpoints`: Conversation states with message history
+- `langgraph_stores`: Additional LangGraph storage
+
+**Environment Variables**:
+- `MONGODB_LANGGRAPH_URL`: Connection string for LangGraph database
+- `MONGODB_LANGGRAPH_DB_NAME`: Database name (default: genesis_langgraph)
+
+### Key Architectural Principles
+
+1. **conversation.id = thread_id**: Simple 1:1 mapping between conversation metadata and LangGraph threads
+2. **Authorization in App DB**: Conversation ownership always verified in App DB before accessing LangGraph state
+3. **thread_id is internal**: NEVER exposed to frontend, always resolved via conversation.id
+4. **Automatic persistence**: LangGraph checkpointer handles all message storage
+5. **Native LangGraph types**: Use MessagesState and BaseMessage (HumanMessage, AIMessage, SystemMessage)
+
+### Why Two Databases?
+
+**Separation of Concerns**:
+- App DB stores "who owns what" (authorization layer)
+- LangGraph DB stores "what was said" (execution layer)
+
+**Benefits**:
+- ✅ Clear security boundary: conversation ownership separate from message content
+- ✅ Scalability: Can scale databases independently
+- ✅ Native LangGraph: Leverage built-in checkpointing and persistence
+- ✅ Cleaner code: No manual message repository, LangGraph handles it all
+
+**Trade-offs**:
+- Slightly more complex deployment (two database connections)
+- Must coordinate operations across both databases (e.g., cascade delete)
 
 ## Data Flow Examples
 
@@ -111,21 +184,26 @@ Genesis uses hexagonal architecture (ports and adapters) to create clean separat
 6. MongoDB (Database)
 ```
 
-### Chat Message
+### Chat Message (LangGraph-First)
 ```
 1. User sends message via WebSocket (Frontend)
    ↓
-2. WebSocket handler (Inbound Adapter)
+2. WebSocket handler verifies ownership (App DB)
    ↓
-3. LangGraph processes message
-   - process_user_input node
-   - call_llm node (uses ILLMProvider)
-   - format_response node
-   - save_to_history node (uses repositories)
+3. Handler calls graph.astream_events(input, config)
+   - config includes thread_id = conversation.id
    ↓
-4. Stream tokens to client (WebSocket)
+4. LangGraph executes graph:
+   - process_user_input node → creates HumanMessage
+   - call_llm node → uses ILLMProvider with BaseMessage
+   - format_response node → creates AIMessage
+   - Automatic checkpoint save to LangGraph DB
    ↓
-5. Frontend displays streaming response
+5. Stream tokens to client via on_chat_model_stream events
+   ↓
+6. Frontend displays streaming response
+   ↓
+7. Message history automatically persisted in LangGraph DB
 ```
 
 ## Key Technology Decisions
