@@ -47,6 +47,14 @@ async def lifespan(app: FastAPI):
     checkpointer = await get_checkpointer()
     app.state.checkpointer = checkpointer
 
+    # Compile LangGraph graphs with checkpointer
+    from app.langgraph.graphs.chat_graph import create_chat_graph
+    from app.langgraph.graphs.streaming_chat_graph import create_streaming_chat_graph
+
+    app.state.chat_graph = create_chat_graph(checkpointer)
+    app.state.streaming_chat_graph = create_streaming_chat_graph(checkpointer)
+    logger.info("LangGraph graphs compiled with checkpointing enabled")
+
     logger.info("Application startup complete")
 
     yield
