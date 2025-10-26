@@ -1,7 +1,7 @@
 // ABOUTME: Chat context for managing conversation and message state
 // ABOUTME: Provides chat state and WebSocket integration to components
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useWebSocket } from "../hooks/useWebSocket";
 import { conversationService } from "../services/conversationService";
 import type { Conversation, Message } from "../services/conversationService";
@@ -49,32 +49,36 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
   const [currentToolExecution, setCurrentToolExecution] = useState<ToolExecution | null>(null);
 
+  const handleToolStart = useCallback((toolName: string, toolInput: string) => {
+    const execution: ToolExecution = {
+      id: `${Date.now()}-${toolName}`,
+      toolName,
+      toolInput,
+      status: "running",
+      startTime: new Date().toISOString(),
+    };
+    setCurrentToolExecution(execution);
+    setToolExecutions((prev) => [...prev, execution]);
+  }, []);
+
+  const handleToolComplete = useCallback((toolName: string, toolResult: string) => {
+    setToolExecutions((prev) =>
+      prev.map((exec) =>
+        exec.id === currentToolExecution?.id
+          ? { ...exec, toolResult, status: "completed", endTime: new Date().toISOString() }
+          : exec
+      )
+    );
+    setCurrentToolExecution(null);
+  }, [currentToolExecution]);
+
   const token = authService.getToken() || "";
   const { isConnected, error, sendMessage: wsSendMessage, streamingMessage: wsStreamingMessage } = useWebSocket({
     url: `${WS_URL}/ws/chat`,
     token,
     autoConnect: true,
-    onToolStart: (toolName: string, toolInput: string) => {
-      const execution: ToolExecution = {
-        id: `${Date.now()}-${toolName}`,
-        toolName,
-        toolInput,
-        status: "running",
-        startTime: new Date().toISOString(),
-      };
-      setCurrentToolExecution(execution);
-      setToolExecutions((prev) => [...prev, execution]);
-    },
-    onToolComplete: (toolName: string, toolResult: string) => {
-      setToolExecutions((prev) =>
-        prev.map((exec) =>
-          exec.id === currentToolExecution?.id
-            ? { ...exec, toolResult, status: "completed", endTime: new Date().toISOString() }
-            : exec
-        )
-      );
-      setCurrentToolExecution(null);
-    },
+    onToolStart: handleToolStart,
+    onToolComplete: handleToolComplete,
   });
 
   useEffect(() => {
@@ -93,7 +97,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }, 100);
       }
     }
-  }, [wsStreamingMessage, currentConversation]);
+  }, [wsStreamingMessage]);
 
   const loadConversations = async () => {
     try {
