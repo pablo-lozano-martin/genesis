@@ -13,6 +13,8 @@ from app.adapters.inbound.websocket_schemas import (
     ServerErrorMessage,
     PingMessage,
     PongMessage,
+    ServerToolStartMessage,
+    ServerToolCompleteMessage,
     MessageType
 )
 from app.core.domain.user import User
@@ -142,13 +144,46 @@ async def handle_websocket_chat(
                 try:
                     # Stream LLM tokens using graph.astream_events()
                     # Checkpointing happens automatically
+                    # Track current tool call context (needed because tool events don't contain tool names)
+                    current_tool_call = None
+
                     async for event in graph.astream_events(input_data, config, version="v2"):
-                        # Stream tokens from LLM to client
-                        if event["event"] == "on_chat_model_stream":
+                        event_type = event["event"]
+
+                        # Stream LLM tokens
+                        if event_type == "on_chat_model_stream":
                             chunk = event["data"]["chunk"]
                             if hasattr(chunk, 'content') and chunk.content:
                                 token_msg = ServerTokenMessage(content=chunk.content)
                                 await manager.send_message(websocket, token_msg.model_dump())
+
+                        # Cache tool call information before tool execution
+                        elif event_type == "on_chat_model_end":
+                            # Check if AIMessage contains tool_calls
+                            output = event["data"].get("output")
+                            if output and hasattr(output, 'tool_calls') and output.tool_calls:
+                                # Store first tool call (parallel_tool_calls=False in our config)
+                                current_tool_call = output.tool_calls[0]
+
+                        # Emit TOOL_START when tool begins execution
+                        elif event_type == "on_tool_start":
+                            if current_tool_call:
+                                tool_start_msg = ServerToolStartMessage(
+                                    tool_name=current_tool_call.get("name", "unknown"),
+                                    tool_input=json.dumps(current_tool_call.get("args", {}))
+                                )
+                                await manager.send_message(websocket, tool_start_msg.model_dump())
+
+                        # Emit TOOL_COMPLETE when tool finishes
+                        elif event_type == "on_tool_end":
+                            if current_tool_call:
+                                tool_result = event["data"].get("output", "")
+                                tool_complete_msg = ServerToolCompleteMessage(
+                                    tool_name=current_tool_call.get("name", "unknown"),
+                                    tool_result=str(tool_result)
+                                )
+                                await manager.send_message(websocket, tool_complete_msg.model_dump())
+                                current_tool_call = None  # Reset for next iteration
 
                     logger.info(f"LangGraph streaming completed for conversation {conversation_id}")
 

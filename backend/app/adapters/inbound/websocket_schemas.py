@@ -2,7 +2,8 @@
 # ABOUTME: Defines message types for streaming chat interactions
 
 from enum import Enum
-from typing import Optional
+from typing import Optional, Literal
+from datetime import datetime
 from pydantic import BaseModel, Field
 
 
@@ -15,6 +16,8 @@ class MessageType(str, Enum):
     ERROR = "error"
     PING = "ping"
     PONG = "pong"
+    TOOL_START = "tool_start"
+    TOOL_COMPLETE = "tool_complete"
 
 
 class ClientMessage(BaseModel):
@@ -74,3 +77,45 @@ class PongMessage(BaseModel):
     """Pong response to ping."""
 
     type: MessageType = Field(default=MessageType.PONG, description="Message type")
+
+
+class ServerToolStartMessage(BaseModel):
+    """
+    Server message indicating tool execution has started.
+
+    Sent when the LLM decides to call a tool and before the tool executes.
+    """
+
+    type: Literal[MessageType.TOOL_START] = MessageType.TOOL_START
+    tool_name: str = Field(..., description="Name of the tool being executed")
+    tool_input: str = Field(..., description="JSON string of input arguments")
+    timestamp: str = Field(
+        default_factory=lambda: datetime.utcnow().isoformat(),
+        description="ISO timestamp of tool start"
+    )
+
+
+class ServerToolCompleteMessage(BaseModel):
+    """
+    Server message indicating tool execution has completed.
+
+    Sent when the tool finishes execution with results.
+    """
+
+    type: Literal[MessageType.TOOL_COMPLETE] = MessageType.TOOL_COMPLETE
+    tool_name: str = Field(..., description="Name of the tool that completed")
+    tool_result: str = Field(..., description="String representation of tool result")
+    timestamp: str = Field(
+        default_factory=lambda: datetime.utcnow().isoformat(),
+        description="ISO timestamp of tool completion"
+    )
+
+
+ServerMessage = (
+    ServerTokenMessage
+    | ServerCompleteMessage
+    | ServerErrorMessage
+    | PongMessage
+    | ServerToolStartMessage
+    | ServerToolCompleteMessage
+)
