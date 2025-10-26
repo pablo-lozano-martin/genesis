@@ -9,6 +9,8 @@ export interface UseWebSocketOptions {
   url: string;
   token: string;
   autoConnect?: boolean;
+  onToolStart?: (toolName: string, toolInput: string) => void;
+  onToolComplete?: (toolName: string, toolResult: string) => void;
 }
 
 export interface StreamingMessage {
@@ -40,7 +42,7 @@ export interface UseWebSocketReturn {
  * @returns WebSocket state and control functions
  */
 export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
-  const { url, token, autoConnect = true } = options;
+  const { url, token, autoConnect = true, onToolStart, onToolComplete } = options;
 
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,12 +103,14 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
         setStreamingMessage(null);
         currentConversationIdRef.current = null;
       },
+      onToolStart,
+      onToolComplete,
     };
 
     const service = new WebSocketService(config);
     wsServiceRef.current = service;
     service.connect();
-  }, [url, token]);
+  }, [url, token, onToolStart, onToolComplete]);
 
   const disconnect = useCallback(() => {
     if (wsServiceRef.current) {

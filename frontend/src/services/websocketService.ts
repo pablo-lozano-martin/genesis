@@ -8,6 +8,8 @@ export const MessageType = {
   ERROR: "error",
   PING: "ping",
   PONG: "pong",
+  TOOL_START: "tool_start",
+  TOOL_COMPLETE: "tool_complete",
 } as const;
 
 export type MessageType = (typeof MessageType)[keyof typeof MessageType];
@@ -39,7 +41,27 @@ export interface ServerPongMessage {
   type: typeof MessageType.PONG;
 }
 
-export type ServerMessage = ServerTokenMessage | ServerCompleteMessage | ServerErrorMessage | ServerPongMessage;
+export interface ServerToolStartMessage {
+  type: typeof MessageType.TOOL_START;
+  tool_name: string;
+  tool_input: string;
+  timestamp: string;
+}
+
+export interface ServerToolCompleteMessage {
+  type: typeof MessageType.TOOL_COMPLETE;
+  tool_name: string;
+  tool_result: string;
+  timestamp: string;
+}
+
+export type ServerMessage =
+  | ServerTokenMessage
+  | ServerCompleteMessage
+  | ServerErrorMessage
+  | ServerPongMessage
+  | ServerToolStartMessage
+  | ServerToolCompleteMessage;
 
 export interface WebSocketConfig {
   url: string;
@@ -49,6 +71,8 @@ export interface WebSocketConfig {
   onError?: (error: string, code?: string) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
+  onToolStart?: (toolName: string, toolInput: string) => void;
+  onToolComplete?: (toolName: string, toolResult: string) => void;
 }
 
 export class WebSocketService {
@@ -126,6 +150,14 @@ export class WebSocketService {
           break;
 
         case MessageType.PONG:
+          break;
+
+        case MessageType.TOOL_START:
+          this.config.onToolStart?.(message.tool_name, message.tool_input);
+          break;
+
+        case MessageType.TOOL_COMPLETE:
+          this.config.onToolComplete?.(message.tool_name, message.tool_result);
           break;
 
         default:

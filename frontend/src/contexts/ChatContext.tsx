@@ -10,6 +10,16 @@ import { generateTitleFromMessage } from "../lib/titleUtils";
 
 const WS_URL = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace("http", "ws");
 
+export interface ToolExecution {
+  id: string;
+  toolName: string;
+  toolInput: string;
+  toolResult?: string;
+  status: "running" | "completed";
+  startTime: string;
+  endTime?: string;
+}
+
 interface ChatContextType {
   conversations: Conversation[];
   currentConversation: Conversation | null;
@@ -18,6 +28,8 @@ interface ChatContextType {
   isStreaming: boolean;
   isConnected: boolean;
   error: string | null;
+  toolExecutions: ToolExecution[];
+  currentToolExecution: ToolExecution | null;
   loadConversations: () => Promise<void>;
   createConversation: () => Promise<void>;
   selectConversation: (id: string) => Promise<void>;
@@ -34,12 +46,35 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [messages, setMessages] = useState<Message[]>([]);
   const [streamingMessage, setStreamingMessage] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
+  const [currentToolExecution, setCurrentToolExecution] = useState<ToolExecution | null>(null);
 
   const token = authService.getToken() || "";
   const { isConnected, error, sendMessage: wsSendMessage, streamingMessage: wsStreamingMessage } = useWebSocket({
     url: `${WS_URL}/ws/chat`,
     token,
     autoConnect: true,
+    onToolStart: (toolName: string, toolInput: string) => {
+      const execution: ToolExecution = {
+        id: `${Date.now()}-${toolName}`,
+        toolName,
+        toolInput,
+        status: "running",
+        startTime: new Date().toISOString(),
+      };
+      setCurrentToolExecution(execution);
+      setToolExecutions((prev) => [...prev, execution]);
+    },
+    onToolComplete: (toolName: string, toolResult: string) => {
+      setToolExecutions((prev) =>
+        prev.map((exec) =>
+          exec.id === currentToolExecution?.id
+            ? { ...exec, toolResult, status: "completed", endTime: new Date().toISOString() }
+            : exec
+        )
+      );
+      setCurrentToolExecution(null);
+    },
   });
 
   useEffect(() => {
@@ -50,13 +85,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (wsStreamingMessage.isComplete) {
         setTimeout(() => {
           setStreamingMessage(null);
+          setToolExecutions([]);
+          setCurrentToolExecution(null);
           if (currentConversation) {
             loadMessages(currentConversation.id);
           }
         }, 100);
       }
     }
-  }, [wsStreamingMessage]);
+  }, [wsStreamingMessage, currentConversation]);
 
   const loadConversations = async () => {
     try {
@@ -170,6 +207,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isStreaming,
         isConnected,
         error,
+        toolExecutions,
+        currentToolExecution,
         loadConversations,
         createConversation,
         selectConversation,
