@@ -16,8 +16,6 @@ Ask me questions about anything unclear:
 - Performance needs
 - Dependencies
 
-For each question, include 3 suggested options (with A/B/C format). Wait for my answers before continuing.
-
 ## Step 3: Draft Issue
 Create an issue with this structure:
 
