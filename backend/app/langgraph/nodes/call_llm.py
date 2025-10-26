@@ -6,6 +6,7 @@ from langchain_core.messages import AIMessage
 from app.langgraph.state import ConversationState
 from app.langgraph.tools.multiply import multiply
 from app.langgraph.tools.add import add
+from app.langgraph.tools.web_search import web_search
 from app.infrastructure.config.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -32,7 +33,7 @@ async def call_llm(state: ConversationState, config: RunnableConfig) -> dict:
 
     logger.info(f"Calling LLM for conversation {conversation_id} with {len(messages)} messages")
 
-    tools = [add, multiply]
+    tools = [multiply, add, web_search]
 
     # Get LLM provider from config
     llm_provider = config["configurable"]["llm_provider"]

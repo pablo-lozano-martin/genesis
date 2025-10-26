@@ -37,7 +37,7 @@ def create_chat_graph(checkpointer: AsyncMongoDBSaver):
 
     graph_builder = StateGraph(ConversationState)
 
-    tools = [multiply, add]
+    tools = [add, multiply]
 
     # Add nodes (no format_response, no save_history - automatic now)
     graph_builder.add_node("process_input", process_user_input)
