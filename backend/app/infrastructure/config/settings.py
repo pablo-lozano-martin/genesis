@@ -69,6 +69,20 @@ class Settings(BaseSettings):
     # Logging Settings
     log_level: str = "INFO"
 
+    # ChromaDB Settings
+    chroma_mode: str = "embedded"  # "embedded" or "http"
+    chroma_persist_directory: str = "./chroma_db"
+    chroma_host: str = "localhost"
+    chroma_port: int = 8000
+    chroma_embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    chroma_collection_name: str = "genesis_documents"
+
+    # Retrieval Settings
+    retrieval_top_k: int = 5
+    retrieval_similarity_threshold: float = 0.5
+    retrieval_chunk_size: int = 512
+    retrieval_chunk_overlap: int = 50
+
 
 # Global settings instance
 settings = Settings()

@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.infrastructure.config.settings import settings
 from app.infrastructure.config.logging_config import setup_logging, get_logger
 from app.infrastructure.database.mongodb import MongoDB, AppDatabase
+from app.infrastructure.database.chromadb_client import ChromaDBClient
 from app.infrastructure.database.langgraph_checkpointer import get_checkpointer
 from app.adapters.inbound.auth_router import router as auth_router
 from app.adapters.inbound.user_router import router as user_router
@@ -38,6 +39,15 @@ async def lifespan(app: FastAPI):
         ConversationDocument
     ])
 
+    # Initialize ChromaDB
+    await ChromaDBClient.initialize()
+    app.state.chroma_client = ChromaDBClient.client
+
+    # Create vector store instance
+    from app.adapters.outbound.vector_stores.vector_store_factory import get_vector_store
+    app.state.vector_store = get_vector_store(ChromaDBClient.client)
+    logger.info("Vector store initialized")
+
     # Initialize LangGraph checkpointer with proper lifecycle management
     checkpointer_context, checkpointer = await get_checkpointer()
     app.state.checkpointer_context = checkpointer_context
@@ -57,6 +67,7 @@ async def lifespan(app: FastAPI):
 
     # Shutdown: Close database connections
     logger.info("Shutting down application")
+    ChromaDBClient.close()
     await AppDatabase.close()
     # Properly exit AsyncMongoDBSaver context manager
     await checkpointer_context.__aexit__(None, None, None)
