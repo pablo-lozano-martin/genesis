@@ -38,6 +38,7 @@ chromadb==0.4.24
 sentence-transformers==2.7.0
 langchain-text-splitters>=0.0.1
 pypdf>=3.0.0
+numpy<2.0.0
 
 # Testing
 pytest>=7.4.3
