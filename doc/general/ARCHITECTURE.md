@@ -247,6 +247,76 @@ Genesis implements a clean separation between application data and AI execution 
 - Conversation ownership checks
 - Protected WebSocket connections
 
+## Tool-Calling Architecture
+
+Genesis supports tool-calling through LangGraph's ToolNode, enabling the AI to invoke functions during conversations. Tools are simple Python functions with type hints and docstrings.
+
+### Components
+
+**Tool Definitions** (`backend/app/langgraph/tools/`):
+- Simple Python functions with type hints and docstrings
+- Examples: `add(a: int, b: int) -> int`, `multiply(a: int, b: int) -> int`
+- Automatically converted to LangChain tool schemas
+
+**LLM Provider Integration**:
+- All providers implement `ILLMProvider.bind_tools(tools, **kwargs)`
+- Delegates to LangChain's native `model.bind_tools()`
+- Returns new provider instance with tools bound
+- Supports `parallel_tool_calls` parameter to control execution
+
+**Graph Structure**:
+```
+START → process_input → call_llm → tools_condition
+                                      ↓ (if tool_calls)
+                                    ToolNode → call_llm → END
+                                      ↓ (if no tool_calls)
+                                     END
+```
+
+**WebSocket Event Streaming**:
+- `on_chat_model_stream`: LLM tokens
+- `on_chat_model_end`: Captures tool_calls from AIMessage
+- `on_tool_start`: Tool execution begins (emits TOOL_START message)
+- `on_tool_end`: Tool execution completes (emits TOOL_COMPLETE message)
+- Frontend receives tool metadata for real-time UI updates
+
+**State Persistence**:
+- ToolMessage objects automatically checkpointed by LangGraph
+- Full conversation history includes tool calls and results
+- No special handling needed for tool persistence
+
+### Adding New Tools
+
+1. Create tool file in `backend/app/langgraph/tools/`
+2. Define function with type hints and docstring:
+   ```python
+   def search_web(query: str) -> str:
+       """Search the web for information."""
+       # Implementation
+       return "search results"
+   ```
+3. Export in `__init__.py`
+4. Register in `streaming_chat_graph.py` tools list
+5. Register in `call_llm.py` tools list
+
+### Frontend Transparency
+
+Tool executions display as cards inline with messages:
+- Tool name badge with status indicator (running/completed)
+- Final result display (no intermediate states)
+- Blue border-left for visual distinction
+- Green badge on completion
+- Automatic cleanup on message completion
+
+**Message Flow**:
+1. User sends message requiring tool use
+2. LLM decides to call tool (AIMessage with tool_calls)
+3. Frontend receives TOOL_START (shows "Running..." badge)
+4. ToolNode executes tool
+5. Frontend receives TOOL_COMPLETE (shows result and "Completed" badge)
+6. LLM generates final response incorporating tool result
+7. Tool execution cards cleared on message completion
+
 ## Extension Points
 
 The architecture makes it easy to add:
@@ -257,11 +327,8 @@ The architecture makes it easy to add:
 3. Add retrieval node to LangGraph
 4. Update use cases
 
-### Tool Calling
-1. Create `ITool` port
-2. Implement tool adapters
-3. Add tool nodes to LangGraph
-4. Update conversation flow
+### ~~Tool Calling~~ ✅ IMPLEMENTED
+See "Tool-Calling Architecture" section above for implementation details.
 
 ### Multi-modal Support
 1. Extend `Message` model for images/audio
