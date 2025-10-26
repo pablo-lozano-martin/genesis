@@ -2,8 +2,6 @@
 // ABOUTME: Shows completed tool calls inline with chat messages for transparency
 
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import type { ToolExecution } from "../../contexts/ChatContext";
 
 interface ToolExecutionCardProps {
@@ -12,33 +10,33 @@ interface ToolExecutionCardProps {
 
 export const ToolExecutionCard: React.FC<ToolExecutionCardProps> = ({ execution }) => {
   return (
-    <Card className="my-2 border-l-4 border-l-blue-500 bg-blue-50">
-      <CardContent className="p-3">
+    <div className="my-2 border-l-4 border-l-blue-500 bg-blue-50 rounded-lg shadow-sm">
+      <div className="p-3">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="font-mono text-xs">
+            <span className="px-2 py-1 border border-gray-300 rounded-md bg-white font-mono text-xs">
               {execution.toolName}
-            </Badge>
+            </span>
             {execution.status === "running" && (
-              <Badge variant="secondary" className="text-xs">
+              <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded-md text-xs">
                 Running...
-              </Badge>
+              </span>
             )}
             {execution.status === "completed" && (
-              <Badge variant="default" className="text-xs bg-green-600">
+              <span className="px-2 py-1 bg-green-600 text-white rounded-md text-xs">
                 Completed
-              </Badge>
+              </span>
             )}
           </div>
         </div>
 
         {execution.toolResult && (
-          <div className="mt-2 text-sm">
+          <div className="mt-2 text-sm text-gray-900">
             <span className="font-semibold">Result:</span>{" "}
             <span className="font-mono">{execution.toolResult}</span>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
