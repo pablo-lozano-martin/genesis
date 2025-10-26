@@ -2,6 +2,7 @@
 # ABOUTME: Loads environment variables and provides type-safe access to configuration values
 
 from typing import Optional
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -68,6 +69,14 @@ class Settings(BaseSettings):
 
     # Logging Settings
     log_level: str = "INFO"
+
+    @field_validator('cors_origins', mode='before')
+    @classmethod
+    def parse_cors_origins(cls, v):
+        """Parse CORS_ORIGINS from comma-separated string or list."""
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(',')]
+        return v
 
     # ChromaDB Settings
     chroma_mode: str = "embedded"  # "embedded" or "http"
