@@ -7,7 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.infrastructure.config.settings import settings
 from app.infrastructure.config.logging_config import setup_logging, get_logger
-from app.infrastructure.database.mongodb import MongoDB
+from app.infrastructure.database.mongodb import MongoDB, AppDatabase
+from app.infrastructure.database.langgraph_checkpointer import get_checkpointer
 from app.adapters.inbound.auth_router import router as auth_router
 from app.adapters.inbound.user_router import router as user_router
 from app.adapters.inbound.conversation_router import router as conversation_router
@@ -25,26 +26,40 @@ async def lifespan(app: FastAPI):
     """
     logger.info(f"Starting {settings.app_name} v{settings.app_version}")
 
-    # Startup: Connect to database and register Beanie document models
+    # Startup: Connect to databases and register Beanie document models
     from app.adapters.outbound.repositories.mongo_models import (
         UserDocument,
-        ConversationDocument,
-        MessageDocument
+        ConversationDocument
     )
 
-    await MongoDB.connect(document_models=[
+    # Connect to App Database (for backward compatibility, also use MongoDB alias)
+    await AppDatabase.connect(document_models=[
         UserDocument,
-        ConversationDocument,
-        MessageDocument
+        ConversationDocument
     ])
+
+    # Initialize LangGraph checkpointer with proper lifecycle management
+    checkpointer_context, checkpointer = await get_checkpointer()
+    app.state.checkpointer_context = checkpointer_context
+    app.state.checkpointer = checkpointer
+
+    # Compile LangGraph graphs with checkpointer
+    from app.langgraph.graphs.chat_graph import create_chat_graph
+    from app.langgraph.graphs.streaming_chat_graph import create_streaming_chat_graph
+
+    app.state.chat_graph = create_chat_graph(checkpointer)
+    app.state.streaming_chat_graph = create_streaming_chat_graph(checkpointer)
+    logger.info("LangGraph graphs compiled with checkpointing enabled")
 
     logger.info("Application startup complete")
 
     yield
 
-    # Shutdown: Close database connection
+    # Shutdown: Close database connections
     logger.info("Shutting down application")
-    await MongoDB.close()
+    await AppDatabase.close()
+    # Properly exit AsyncMongoDBSaver context manager
+    await checkpointer_context.__aexit__(None, None, None)
     logger.info("Application shutdown complete")
 
 

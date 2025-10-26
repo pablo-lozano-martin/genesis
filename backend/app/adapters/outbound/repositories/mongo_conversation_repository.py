@@ -25,7 +25,7 @@ class MongoConversationRepository(IConversationRepository):
             title=doc.title,
             created_at=doc.created_at,
             updated_at=doc.updated_at,
-            message_count=doc.message_count
+            message_count=getattr(doc, 'message_count', None)
         )
 
     async def create(self, user_id: str, conversation_data: ConversationCreate) -> Conversation:
@@ -115,6 +115,9 @@ class MongoConversationRepository(IConversationRepository):
         """
         Increment the message count for a conversation.
 
+        Note: This method is deprecated as message_count is now optional
+        and tracked via LangGraph checkpoints. Kept for backward compatibility.
+
         Args:
             conversation_id: Conversation unique identifier
             count: Number to increment by (default: 1)
@@ -126,7 +129,10 @@ class MongoConversationRepository(IConversationRepository):
         if not doc:
             return None
 
-        doc.message_count += count
+        # Only update if message_count field exists (for backward compatibility)
+        if hasattr(doc, 'message_count') and doc.message_count is not None:
+            doc.message_count += count
+
         doc.updated_at = datetime.utcnow()
         await doc.save()
 

@@ -25,8 +25,14 @@ class Settings(BaseSettings):
     port: int = 8000
 
     # Database Settings
-    mongodb_url: str = "mongodb://mongodb:27017"
-    mongodb_db_name: str = "genesis"
+    mongodb_url: str = "mongodb://mongodb:27017"  # Kept for backward compatibility
+    mongodb_db_name: str = "genesis"  # Kept for backward compatibility
+
+    # Dual Database Settings
+    mongodb_app_url: str = "mongodb://mongodb:27017"
+    mongodb_app_db_name: str = "genesis_app"
+    mongodb_langgraph_url: str = "mongodb://mongodb:27017"
+    mongodb_langgraph_db_name: str = "genesis_langgraph"
 
     # Security Settings
     secret_key: str

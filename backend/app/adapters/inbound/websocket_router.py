@@ -1,11 +1,10 @@
-# ABOUTME: WebSocket router for chat endpoints
-# ABOUTME: Defines WebSocket routes with authentication and dependency injection
+# ABOUTME: WebSocket router for chat endpoints with LangGraph integration
+# ABOUTME: Uses LangGraph streaming with automatic checkpointing
 
 from fastapi import APIRouter, WebSocket, WebSocketException
 from app.adapters.inbound.websocket_handler import handle_websocket_chat
 from app.infrastructure.security.websocket_auth import get_user_from_websocket
 from app.adapters.outbound.llm_providers.provider_factory import get_llm_provider
-from app.adapters.outbound.repositories.mongo_message_repository import MongoMessageRepository
 from app.adapters.outbound.repositories.mongo_conversation_repository import MongoConversationRepository
 from app.infrastructure.config.logging_config import get_logger
 
@@ -17,14 +16,14 @@ router = APIRouter()
 @router.websocket("/ws/chat")
 async def websocket_chat_endpoint(websocket: WebSocket):
     """
-    WebSocket endpoint for real-time chat streaming.
+    WebSocket endpoint for real-time chat streaming using LangGraph.
 
     This endpoint:
     - Authenticates the user via token (query param or header)
     - Establishes a persistent WebSocket connection
     - Receives user messages
-    - Streams LLM responses token-by-token
-    - Persists all messages to the database
+    - Streams LLM responses token-by-token via graph.astream_events()
+    - Messages are automatically persisted via LangGraph checkpointer
 
     Authentication:
     - Send token as query parameter: /ws/chat?token=<jwt_token>
@@ -33,7 +32,7 @@ async def websocket_chat_endpoint(websocket: WebSocket):
     Protocol:
     - Client sends: {"type": "message", "conversation_id": "uuid", "content": "..."}
     - Server streams: {"type": "token", "content": "..."}
-    - Server completes: {"type": "complete", "message_id": "uuid", "conversation_id": "uuid"}
+    - Server completes: {"type": "complete", "conversation_id": "uuid"}
     - Server errors: {"type": "error", "message": "...", "code": "..."}
 
     Raises:
@@ -42,15 +41,17 @@ async def websocket_chat_endpoint(websocket: WebSocket):
     try:
         user = await get_user_from_websocket(websocket)
 
+        # Get compiled graph from app state
+        graph = websocket.app.state.streaming_chat_graph
+
         llm_provider = get_llm_provider()
-        message_repository = MongoMessageRepository()
         conversation_repository = MongoConversationRepository()
 
         await handle_websocket_chat(
             websocket=websocket,
             user=user,
+            graph=graph,
             llm_provider=llm_provider,
-            message_repository=message_repository,
             conversation_repository=conversation_repository
         )
 

@@ -1,12 +1,11 @@
 # ABOUTME: OpenAI LLM provider implementation using LangChain
-# ABOUTME: Implements ILLMProvider port interface for OpenAI models
+# ABOUTME: Implements ILLMProvider port interface for OpenAI models with native BaseMessage support
 
-from typing import List, AsyncGenerator
+from typing import List, AsyncGenerator, Callable, Any
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from langchain_core.messages import BaseMessage
 
 from app.core.ports.llm_provider import ILLMProvider
-from app.core.domain.message import Message, MessageRole
 from app.infrastructure.config.settings import settings
 from app.infrastructure.config.logging_config import get_logger
 
@@ -18,7 +17,8 @@ class OpenAIProvider(ILLMProvider):
     OpenAI LLM provider implementation.
 
     This adapter implements the ILLMProvider port using OpenAI's API
-    through LangChain's ChatOpenAI integration.
+    through LangChain's ChatOpenAI integration. Works directly with
+    LangChain BaseMessage types (HumanMessage, AIMessage, SystemMessage).
     """
 
     def __init__(self):
@@ -43,54 +43,32 @@ class OpenAIProvider(ILLMProvider):
         )
         logger.info(f"Initialized OpenAI provider with model: {settings.openai_model}")
 
-    def _convert_messages(self, messages: List[Message]) -> List:
-        """
-        Convert domain Message objects to LangChain message format.
-
-        Args:
-            messages: List of domain message objects
-
-        Returns:
-            List of LangChain message objects
-        """
-        langchain_messages = []
-        for msg in messages:
-            if msg.role == MessageRole.USER:
-                langchain_messages.append(HumanMessage(content=msg.content))
-            elif msg.role == MessageRole.ASSISTANT:
-                langchain_messages.append(AIMessage(content=msg.content))
-            elif msg.role == MessageRole.SYSTEM:
-                langchain_messages.append(SystemMessage(content=msg.content))
-
-        return langchain_messages
-
-    async def generate(self, messages: List[Message]) -> str:
+    async def generate(self, messages: List[BaseMessage]) -> BaseMessage:
         """
         Generate a response from OpenAI based on conversation history.
 
         Args:
-            messages: List of messages representing the conversation history
+            messages: List of BaseMessage objects representing the conversation history
 
         Returns:
-            Generated response text
+            Generated response as AIMessage (may include tool_calls)
 
         Raises:
             Exception: If LLM generation fails
         """
         try:
-            langchain_messages = self._convert_messages(messages)
-            response = await self.model.ainvoke(langchain_messages)
-            return response.content
+            response = await self.model.ainvoke(messages)
+            return response
         except Exception as e:
             logger.error(f"OpenAI generation failed: {e}")
             raise Exception(f"Failed to generate response from OpenAI: {str(e)}")
 
-    async def stream(self, messages: List[Message]) -> AsyncGenerator[str, None]:
+    async def stream(self, messages: List[BaseMessage]) -> AsyncGenerator[str, None]:
         """
         Stream a response from OpenAI token-by-token.
 
         Args:
-            messages: List of messages representing the conversation history
+            messages: List of BaseMessage objects representing the conversation history
 
         Yields:
             Response tokens as they are generated
@@ -99,8 +77,7 @@ class OpenAIProvider(ILLMProvider):
             Exception: If LLM streaming fails
         """
         try:
-            langchain_messages = self._convert_messages(messages)
-            async for chunk in self.model.astream(langchain_messages):
+            async for chunk in self.model.astream(messages):
                 if chunk.content:
                     yield chunk.content
         except Exception as e:
@@ -115,3 +92,21 @@ class OpenAIProvider(ILLMProvider):
             Model name (e.g., "gpt-4-turbo-preview")
         """
         return settings.openai_model
+
+    def bind_tools(self, tools: List[Callable], **kwargs: Any) -> 'ILLMProvider':
+        """
+        Bind tools to the OpenAI provider for tool calling.
+
+        Args:
+            tools: List of callable tools to bind
+            **kwargs: Additional keyword arguments for binding
+
+        Returns:
+            A new OpenAIProvider instance with tools bound
+        """
+        bound_model = self.model.bind_tools(tools, **kwargs)
+        # Create a new instance with the bound model
+        new_provider = OpenAIProvider.__new__(OpenAIProvider)
+        new_provider.model = bound_model
+        # Copy other attributes if needed, but for now, model is the main one
+        return new_provider

@@ -1,46 +1,47 @@
 # ABOUTME: Node for invoking the LLM provider to generate responses
-# ABOUTME: Handles LLM communication and error handling
+# ABOUTME: Uses LangChain BaseMessage types for LLM communication
 
+from langgraph.types import RunnableConfig
+from langchain_core.messages import AIMessage
 from app.langgraph.state import ConversationState
-from app.core.ports.llm_provider import ILLMProvider
+from app.langgraph.tools.multiply import multiply
 from app.infrastructure.config.logging_config import get_logger
 
 logger = get_logger(__name__)
 
 
-async def call_llm(state: ConversationState, llm_provider: ILLMProvider) -> dict:
+async def call_llm(state: ConversationState, config: RunnableConfig) -> dict:
     """
     Call the LLM provider to generate a response.
 
     This node:
-    - Invokes the configured LLM provider with message history
-    - Handles errors gracefully
-    - Returns the generated response or error state
+    - Retrieves the LLM provider from RunnableConfig
+    - Invokes the LLM with the message history (List[BaseMessage])
+    - Returns an AIMessage with the generated response
 
     Args:
-        state: Current conversation state
-        llm_provider: LLM provider instance (injected dependency)
+        state: Current conversation state with messages (List[BaseMessage])
+        config: RunnableConfig containing llm_provider in configurable dict
 
     Returns:
-        Dictionary with state updates (llm_response or error)
+        Dictionary with messages list containing the AIMessage response
     """
-    try:
-        messages = state["messages"]
-        conversation_id = state["conversation_id"]
+    messages = state["messages"]
+    conversation_id = state["conversation_id"]
 
-        logger.info(f"Calling LLM for conversation {conversation_id} with {len(messages)} messages")
+    logger.info(f"Calling LLM for conversation {conversation_id} with {len(messages)} messages")
 
-        response = await llm_provider.generate(messages)
+    tools = [multiply]
 
-        logger.info(f"LLM response generated for conversation {conversation_id}")
+    # Get LLM provider from config
+    llm_provider = config["configurable"]["llm_provider"]
+    llm_provider_with_tools = llm_provider.bind_tools(tools, parallel_tool_calls=False)
 
-        return {
-            "llm_response": response,
-            "error": None
-        }
+    # Generate response (llm_provider_with_tools.generate should work with BaseMessage types)
+    ai_message = await llm_provider_with_tools.generate(messages)
 
-    except Exception as e:
-        logger.error(f"LLM generation failed for conversation {state['conversation_id']}: {e}")
-        return {
-            "error": f"Failed to generate response: {str(e)}"
-        }
+    logger.info(f"LLM response generated for conversation {conversation_id}")
+
+    return {
+        "messages": [ai_message]
+    }

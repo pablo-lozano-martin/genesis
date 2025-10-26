@@ -1,11 +1,10 @@
 # ABOUTME: Unit tests for LLM provider implementations
-# ABOUTME: Tests provider factory and message conversion
+# ABOUTME: Tests provider factory
 
 import pytest
 from unittest.mock import AsyncMock, patch
 
 from app.adapters.outbound.llm_providers.provider_factory import LLMProviderFactory
-from app.core.domain.message import Message, MessageRole
 
 
 @pytest.mark.unit
@@ -67,34 +66,3 @@ class TestLLMProviderFactory:
 
         with pytest.raises(ValueError, match="Unsupported LLM provider"):
             LLMProviderFactory.create_provider()
-
-
-@pytest.mark.unit
-class TestMessageConversion:
-    """Tests for message conversion in providers."""
-
-    def test_message_roles(self):
-        """Test that message roles are correctly defined."""
-        assert MessageRole.USER == "user"
-        assert MessageRole.ASSISTANT == "assistant"
-        assert MessageRole.SYSTEM == "system"
-
-    def test_message_creation_for_llm(self):
-        """Test creating messages for LLM processing."""
-        messages = [
-            Message(
-                conversation_id="test",
-                role=MessageRole.USER,
-                content="Hello"
-            ),
-            Message(
-                conversation_id="test",
-                role=MessageRole.ASSISTANT,
-                content="Hi there"
-            )
-        ]
-
-        assert len(messages) == 2
-        assert messages[0].role == MessageRole.USER
-        assert messages[1].role == MessageRole.ASSISTANT
-        assert all(msg.content for msg in messages)
