@@ -59,8 +59,21 @@ async def get_messages_endpoint(
     base_messages = await get_conversation_messages(graph, conversation_id)
 
     # Convert BaseMessage objects to MessageResponse format
+    # Filter out internal execution details (tool calls/responses)
     messages = []
     for msg in base_messages:
+        # Skip tool messages (internal LangGraph execution details)
+        if msg.type == "tool":
+            continue
+
+        # Skip AI messages that only contain tool_calls without content
+        # These are intermediate execution steps, not user-facing responses
+        if msg.type == "ai":
+            has_tool_calls = hasattr(msg, 'tool_calls') and msg.tool_calls
+            has_content = msg.content and msg.content.strip()
+            if has_tool_calls and not has_content:
+                continue
+
         # Map LangChain message types to our MessageRole
         if msg.type == "human":
             role = MessageRole.USER
@@ -68,8 +81,6 @@ async def get_messages_endpoint(
             role = MessageRole.ASSISTANT
         elif msg.type == "system":
             role = MessageRole.SYSTEM
-        elif msg.type == "tool":
-            role = MessageRole.TOOL
         else:
             role = MessageRole.USER  # Default fallback
 

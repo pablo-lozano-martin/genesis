@@ -18,8 +18,9 @@ async def get_conversation_messages(graph, conversation_id: str) -> List[BaseMes
         conversation_id: UUID of the conversation (maps to thread_id)
 
     Returns:
-        List of BaseMessage objects (HumanMessage, AIMessage, SystemMessage)
-        representing the complete conversation history including tool calls.
+        List of BaseMessage objects (HumanMessage, AIMessage, SystemMessage, ToolMessage)
+        representing the complete conversation history. Note: Callers should filter
+        tool messages and intermediate AI tool-call messages before exposing to frontend.
     """
     try:
         # Create config with thread_id (conversation.id)
