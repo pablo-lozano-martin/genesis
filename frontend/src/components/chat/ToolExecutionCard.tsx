@@ -2,6 +2,9 @@
 // ABOUTME: Shows completed tool calls inline with chat messages for transparency
 
 import React from "react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Check, Loader2 } from "lucide-react";
 import type { ToolExecution } from "../../contexts/ChatContext";
 
 interface ToolExecutionCardProps {
@@ -10,33 +13,25 @@ interface ToolExecutionCardProps {
 
 export const ToolExecutionCard: React.FC<ToolExecutionCardProps> = ({ execution }) => {
   return (
-    <div className="my-2 border-l-4 border-l-blue-500 bg-blue-50 rounded-lg shadow-sm">
-      <div className="p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-1 border border-gray-300 rounded-md bg-white font-mono text-xs">
-              {execution.toolName}
+    <Card className="my-1.5 border-l-2 border-l-blue-500 bg-blue-50/50">
+      <div className="px-3 py-2">
+        <div className="flex items-center gap-2">
+          {execution.status === "running" && (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
+          )}
+          {execution.status === "completed" && (
+            <Check className="h-3.5 w-3.5 text-green-600" />
+          )}
+          <Badge variant="outline" className="font-mono text-xs">
+            {execution.toolName}
+          </Badge>
+          {execution.toolResult && (
+            <span className="text-xs text-gray-600 font-mono">
+              → {execution.toolResult}
             </span>
-            {execution.status === "running" && (
-              <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded-md text-xs">
-                Running...
-              </span>
-            )}
-            {execution.status === "completed" && (
-              <span className="px-2 py-1 bg-green-600 text-white rounded-md text-xs">
-                Completed
-              </span>
-            )}
-          </div>
+          )}
         </div>
-
-        {execution.toolResult && (
-          <div className="mt-2 text-sm text-gray-900">
-            <span className="font-semibold">Result:</span>{" "}
-            <span className="font-mono">{execution.toolResult}</span>
-          </div>
-        )}
       </div>
-    </div>
+    </Card>
   );
 };
