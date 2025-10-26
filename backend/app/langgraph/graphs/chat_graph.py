@@ -9,6 +9,7 @@ from app.langgraph.nodes.process_input import process_user_input
 from app.langgraph.nodes.call_llm import call_llm
 from app.infrastructure.config.logging_config import get_logger
 from app.langgraph.tools.multiply import multiply
+from app.langgraph.tools.add import add
 
 
 logger = get_logger(__name__)
@@ -36,7 +37,7 @@ def create_chat_graph(checkpointer: AsyncMongoDBSaver):
 
     graph_builder = StateGraph(ConversationState)
 
-    tools = [multiply]
+    tools = [multiply, add]
 
     # Add nodes (no format_response, no save_history - automatic now)
     graph_builder.add_node("process_input", process_user_input)
