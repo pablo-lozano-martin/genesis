@@ -1,7 +1,7 @@
 // ABOUTME: Chat context for managing conversation and message state
 // ABOUTME: Provides chat state and WebSocket integration to components
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useWebSocket } from "../hooks/useWebSocket";
 import { conversationService } from "../services/conversationService";
 import type { Conversation, Message } from "../services/conversationService";
@@ -48,6 +48,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isStreaming, setIsStreaming] = useState(false);
   const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
   const [currentToolExecution, setCurrentToolExecution] = useState<ToolExecution | null>(null);
+  const currentToolExecutionRef = useRef<ToolExecution | null>(null);
 
   const handleToolStart = useCallback((toolName: string, toolInput: string) => {
     const execution: ToolExecution = {
@@ -57,6 +58,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       status: "running",
       startTime: new Date().toISOString(),
     };
+    currentToolExecutionRef.current = execution;
     setCurrentToolExecution(execution);
     setToolExecutions((prev) => [...prev, execution]);
   }, []);
@@ -64,13 +66,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleToolComplete = useCallback((toolName: string, toolResult: string) => {
     setToolExecutions((prev) =>
       prev.map((exec) =>
-        exec.id === currentToolExecution?.id
+        exec.id === currentToolExecutionRef.current?.id
           ? { ...exec, toolResult, status: "completed", endTime: new Date().toISOString() }
           : exec
       )
     );
+    currentToolExecutionRef.current = null;
     setCurrentToolExecution(null);
-  }, [currentToolExecution]);
+  }, []);
 
   const token = authService.getToken() || "";
   const { isConnected, error, sendMessage: wsSendMessage, streamingMessage: wsStreamingMessage } = useWebSocket({
@@ -91,6 +94,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setStreamingMessage(null);
           setToolExecutions([]);
           setCurrentToolExecution(null);
+          currentToolExecutionRef.current = null;
           if (currentConversation) {
             loadMessages(currentConversation.id);
           }
