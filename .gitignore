@@ -97,3 +97,6 @@ coverage/
 *.pyo
 *.pyd
 .Python
+
+# ChromaDB vector database
+chroma_db/

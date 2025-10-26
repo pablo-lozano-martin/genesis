@@ -12,7 +12,7 @@ Place documents here for ingestion into the RAG knowledge base.
 Run the ingestion script from the backend directory:
 
 ```bash
-python scripts/ingest_documents.py data/knowledge_base/
+python scripts/ingest_documents.py knowledge_base/
 ```
 
 ## Document Guidelines
