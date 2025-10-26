@@ -7,8 +7,13 @@ import sys
 from pathlib import Path
 from typing import List
 from datetime import datetime
+from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Load environment variables from .env file (project root)
+env_path = Path(__file__).parent.parent.parent / '.env'
+load_dotenv(env_path)
 
 from app.infrastructure.config.settings import settings
 from app.infrastructure.config.logging_config import get_logger
