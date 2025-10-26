@@ -5,6 +5,7 @@ import React, { useEffect, useRef } from "react";
 import type { Message } from "../../services/conversationService";
 import { ToolExecutionCard } from "./ToolExecutionCard";
 import { useChat } from "../../contexts/ChatContext";
+import { MarkdownMessage } from "./MarkdownMessage";
 
 interface MessageListProps {
   messages: Message[];
@@ -40,7 +41,11 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, streamingMes
                 : "bg-gray-100 text-gray-900"
             }`}
           >
-            <div className="whitespace-pre-wrap break-words">{message.content}</div>
+            {message.role === "user" ? (
+              <div className="whitespace-pre-wrap break-words">{message.content}</div>
+            ) : (
+              <MarkdownMessage content={message.content} />
+            )}
           </div>
         </div>
       ))}
@@ -58,7 +63,7 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, streamingMes
           <div className="max-w-[70%] rounded-lg px-4 py-2 bg-gray-100 text-gray-900">
             {streamingMessage ? (
               <>
-                <div className="whitespace-pre-wrap break-words">{streamingMessage}</div>
+                <MarkdownMessage content={streamingMessage} />
                 <div className="mt-1 text-xs text-gray-400">●</div>
               </>
             ) : (

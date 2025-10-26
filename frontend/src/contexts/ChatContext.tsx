@@ -63,7 +63,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToolExecutions((prev) => [...prev, execution]);
   }, []);
 
-  const handleToolComplete = useCallback((toolName: string, toolResult: string) => {
+  const handleToolComplete = useCallback((_toolName: string, toolResult: string) => {
     setToolExecutions((prev) =>
       prev.map((exec) =>
         exec.id === currentToolExecutionRef.current?.id
