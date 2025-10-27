@@ -48,6 +48,16 @@ async def lifespan(app: FastAPI):
     app.state.vector_store = get_vector_store(ChromaDBClient.client)
     logger.info("Vector store initialized")
 
+    # Initialize MCP client manager
+    from app.infrastructure.mcp import MCPClientManager
+    try:
+        await MCPClientManager.initialize()
+        app.state.mcp_manager = MCPClientManager
+        logger.info("MCP client manager initialized")
+    except Exception as e:
+        logger.error(f"MCP initialization failed: {e}")
+        app.state.mcp_manager = None
+
     # Initialize LangGraph checkpointer with proper lifecycle management
     checkpointer_context, checkpointer = await get_checkpointer()
     app.state.checkpointer_context = checkpointer_context
@@ -67,6 +77,12 @@ async def lifespan(app: FastAPI):
 
     # Shutdown: Close database connections
     logger.info("Shutting down application")
+
+    # Shutdown MCP
+    if hasattr(app.state, 'mcp_manager') and app.state.mcp_manager:
+        from app.infrastructure.mcp import MCPClientManager
+        await MCPClientManager.shutdown()
+
     ChromaDBClient.close()
     await AppDatabase.close()
     # Properly exit AsyncMongoDBSaver context manager

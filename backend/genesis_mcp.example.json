@@ -1,0 +1,9 @@
+[
+  {
+    "name": "example-mcp-server",
+    "transport": "stdio",
+    "command": "uvx",
+    "args": ["mcp-server-fetch"],
+    "env": {}
+  }
+]

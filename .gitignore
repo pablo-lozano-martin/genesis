@@ -9,6 +9,7 @@
 
 # MCP configuration (may contain sensitive server configs)
 .mcp.json
+backend/genesis_mcp.json
 
 # Python
 __pycache__/
