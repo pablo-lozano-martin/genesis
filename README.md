@@ -1,7 +1,7 @@
 
 # Genesis
 
-Genesis is a ready-to-use template for building your own AI-powered applications with LangGraph. Whether you want to create a chatbot, a smart assistant, or any kind of agentic app, Genesis gives you a flexible starting point. It’s designed for all kinds of projects and purposes—just customize it to fit your needs and ideas. No deep technical setup required: simply use Genesis as your foundation and start building the agentic app you imagine!
+A ready-to-use template for building your own AI-powered applications with LangGraph. Whether you want to create a chatbot, a smart assistant, or any kind of agentic app, Genesis gives you a flexible starting point. It’s designed for all kinds of projects and purposes—just customize it to fit your needs and ideas. No deep technical setup required: simply use Genesis as your foundation and start building the agentic app you imagine!
 
 ## 🚀 Quick Start
 
