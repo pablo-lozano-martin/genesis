@@ -1,6 +1,7 @@
 # ABOUTME: Streaming chat graph with token-by-token response support via graph.astream_events()
 # ABOUTME: Uses LangGraph-first architecture with automatic checkpointing and native streaming
 
+from typing import Optional, List, Callable
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.mongodb.aio import AsyncMongoDBSaver
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -16,7 +17,7 @@ from app.infrastructure.config.logging_config import get_logger
 logger = get_logger(__name__)
 
 
-def create_streaming_chat_graph(checkpointer: AsyncMongoDBSaver):
+def create_streaming_chat_graph(checkpointer: AsyncMongoDBSaver, tools: Optional[List[Callable]] = None):
     """
     Create and compile the streaming chat graph with automatic checkpointing.
 
@@ -33,6 +34,7 @@ def create_streaming_chat_graph(checkpointer: AsyncMongoDBSaver):
 
     Args:
         checkpointer: AsyncMongoDBSaver instance for automatic state persistence
+        tools: Optional list of tools (defaults to local tools)
 
     Returns:
         Compiled LangGraph instance with checkpointer, streaming support, and tool execution
@@ -41,7 +43,9 @@ def create_streaming_chat_graph(checkpointer: AsyncMongoDBSaver):
 
     graph_builder = StateGraph(ConversationState)
 
-    tools = [multiply, add, web_search, rag_search]
+    if tools is None:
+        # Default to local tools
+        tools = [multiply, add, web_search, rag_search]
 
     # Add nodes (streaming handled by astream_events at invocation level)
     graph_builder.add_node("process_input", process_user_input)

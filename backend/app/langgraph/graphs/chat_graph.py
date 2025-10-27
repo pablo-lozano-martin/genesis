@@ -1,6 +1,7 @@
 # ABOUTME: Main chat conversation graph using LangGraph
 # ABOUTME: LangGraph-first architecture with automatic checkpointing and native MessagesState
 
+from typing import Optional, List, Callable
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.mongodb.aio import AsyncMongoDBSaver
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -10,12 +11,14 @@ from app.langgraph.nodes.call_llm import call_llm
 from app.infrastructure.config.logging_config import get_logger
 from app.langgraph.tools.multiply import multiply
 from app.langgraph.tools.add import add
+from app.langgraph.tools.web_search import web_search
+from app.langgraph.tools.rag_search import rag_search
 
 
 logger = get_logger(__name__)
 
 
-def create_chat_graph(checkpointer: AsyncMongoDBSaver):
+def create_chat_graph(checkpointer: AsyncMongoDBSaver, tools: Optional[List[Callable]] = None):
     """
     Create and compile the chat conversation graph with automatic checkpointing.
 
@@ -29,6 +32,7 @@ def create_chat_graph(checkpointer: AsyncMongoDBSaver):
 
     Args:
         checkpointer: AsyncMongoDBSaver instance for automatic state persistence
+        tools: Optional list of tools (defaults to local tools)
 
     Returns:
         Compiled LangGraph instance with checkpointing enabled
@@ -37,7 +41,9 @@ def create_chat_graph(checkpointer: AsyncMongoDBSaver):
 
     graph_builder = StateGraph(ConversationState)
 
-    tools = [add, multiply]
+    if tools is None:
+        # Default to local tools
+        tools = [multiply, add, web_search, rag_search]
 
     # Add nodes (no format_response, no save_history - automatic now)
     graph_builder.add_node("process_input", process_user_input)
