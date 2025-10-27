@@ -95,12 +95,32 @@ class MCPClientManager:
     @classmethod
     async def _discover_tools(cls, session: ClientSession, server_name: str) -> None:
         """Discover and register tools from an MCP server."""
+        from app.langgraph.tools.mcp_adapter import MCPToolAdapter, MCPToolDefinition
+
         tools_response = await session.list_tools()
 
         for tool_def in tools_response.tools:
-            logger.info(f"Discovered tool: {server_name}:{tool_def.name}")
-            # Tool conversion will be handled in Phase 2
-            # For now, just log discovery
+            try:
+                # Convert MCP tool to adapter
+                definition = MCPToolDefinition(
+                    name=tool_def.name,
+                    description=tool_def.description or f"Tool: {tool_def.name}",
+                    input_schema=tool_def.inputSchema or {}
+                )
+
+                # Create adapter with namespace
+                adapter = MCPToolAdapter(
+                    definition=definition,
+                    session=session,
+                    namespace=server_name
+                )
+
+                cls._tools.append(adapter)
+                logger.info(f"Registered MCP tool: {adapter.__name__}")
+
+            except Exception as e:
+                logger.error(f"Failed to convert tool {tool_def.name}: {e}")
+                # Continue with other tools (graceful degradation)
 
     @classmethod
     def get_tools(cls) -> List[Callable]:
