@@ -18,6 +18,7 @@ export interface ToolExecution {
   status: "running" | "completed";
   startTime: string;
   endTime?: string;
+  source?: "local" | "mcp";
 }
 
 interface ChatContextType {
@@ -50,20 +51,21 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentToolExecution, setCurrentToolExecution] = useState<ToolExecution | null>(null);
   const currentToolExecutionRef = useRef<ToolExecution | null>(null);
 
-  const handleToolStart = useCallback((toolName: string, toolInput: string) => {
+  const handleToolStart = useCallback((toolName: string, toolInput: string, source?: string) => {
     const execution: ToolExecution = {
       id: `${Date.now()}-${toolName}`,
       toolName,
       toolInput,
       status: "running",
       startTime: new Date().toISOString(),
+      source: source as "local" | "mcp" | undefined,
     };
     currentToolExecutionRef.current = execution;
     setCurrentToolExecution(execution);
     setToolExecutions((prev) => [...prev, execution]);
   }, []);
 
-  const handleToolComplete = useCallback((_toolName: string, toolResult: string) => {
+  const handleToolComplete = useCallback((_toolName: string, toolResult: string, _source?: string) => {
     setToolExecutions((prev) =>
       prev.map((exec) =>
         exec.id === currentToolExecutionRef.current?.id

@@ -168,19 +168,43 @@ async def handle_websocket_chat(
                         # Emit TOOL_START when tool begins execution
                         elif event_type == "on_tool_start":
                             if current_tool_call:
+                                tool_name = current_tool_call.get("name", "unknown")
+
+                                # Get tool source from registry
+                                tool_source = "local"
+                                if hasattr(websocket.app.state, 'tool_registry'):
+                                    from app.langgraph.tool_metadata import get_tool_registry
+                                    registry = get_tool_registry()
+                                    source = registry.get_tool_source(tool_name)
+                                    if source:
+                                        tool_source = source.value
+
                                 tool_start_msg = ServerToolStartMessage(
-                                    tool_name=current_tool_call.get("name", "unknown"),
-                                    tool_input=json.dumps(current_tool_call.get("args", {}))
+                                    tool_name=tool_name,
+                                    tool_input=json.dumps(current_tool_call.get("args", {})),
+                                    source=tool_source
                                 )
                                 await manager.send_message(websocket, tool_start_msg.model_dump())
 
                         # Emit TOOL_COMPLETE when tool finishes
                         elif event_type == "on_tool_end":
                             if current_tool_call:
+                                tool_name = current_tool_call.get("name", "unknown")
                                 tool_result = event["data"].get("output", "")
+
+                                # Get tool source from registry
+                                tool_source = "local"
+                                if hasattr(websocket.app.state, 'tool_registry'):
+                                    from app.langgraph.tool_metadata import get_tool_registry
+                                    registry = get_tool_registry()
+                                    source = registry.get_tool_source(tool_name)
+                                    if source:
+                                        tool_source = source.value
+
                                 tool_complete_msg = ServerToolCompleteMessage(
-                                    tool_name=current_tool_call.get("name", "unknown"),
-                                    tool_result=str(tool_result)
+                                    tool_name=tool_name,
+                                    tool_result=str(tool_result),
+                                    source=tool_source
                                 )
                                 await manager.send_message(websocket, tool_complete_msg.model_dump())
                                 current_tool_call = None  # Reset for next iteration

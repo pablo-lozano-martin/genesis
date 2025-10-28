@@ -76,6 +76,30 @@ async def lifespan(app: FastAPI):
     mcp_tools = MCPClientManager.get_tools() if app.state.mcp_manager else []
     all_tools = local_tools + mcp_tools
 
+    # Register tools in metadata registry
+    from app.langgraph.tool_metadata import get_tool_registry, ToolMetadata, ToolSource
+
+    tool_registry = get_tool_registry()
+
+    # Register local tools
+    for tool in local_tools:
+        tool_registry.register_tool(ToolMetadata(
+            name=tool.__name__,
+            description=tool.__doc__ or f"Local Python tool: {tool.__name__}",
+            source=ToolSource.LOCAL
+        ))
+
+    # Register MCP tools
+    for tool in mcp_tools:
+        tool_registry.register_tool(ToolMetadata(
+            name=tool.__name__,
+            description=tool.__doc__ or "",
+            source=ToolSource.MCP
+        ))
+
+    app.state.tool_registry = tool_registry
+    logger.info(f"Tool registry initialized with {len(tool_registry.get_all_tools())} tools")
+
     logger.info(f"Compiling graphs with {len(local_tools)} local tools and {len(mcp_tools)} MCP tools")
 
     app.state.chat_graph = create_chat_graph(checkpointer, all_tools)
