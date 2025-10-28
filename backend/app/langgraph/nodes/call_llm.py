@@ -35,7 +35,7 @@ async def call_llm(state: ConversationState, config: RunnableConfig) -> dict:
     logger.info(f"Calling LLM for conversation {conversation_id} with {len(messages)} messages")
 
     # Get local Python tools
-    local_tools = [multiply, add, web_search, rag_search]
+    local_tools = [multiply, add, rag_search]
 
     # Get MCP tools from manager
     mcp_tools = []

@@ -19,6 +19,7 @@ class MCPClientManager:
     _clients: Dict[str, ClientSession] = {}
     _tools: List[Callable] = []
     _client_contexts: List[Any] = []
+    _session_contexts: List[Any] = []
 
     def __new__(cls):
         if cls._instance is None:
@@ -77,7 +78,11 @@ class MCPClientManager:
             read, write = await stdio_context.__aenter__()
             cls._client_contexts.append(stdio_context)
 
-            session = ClientSession(read, write)
+            # Also keep ClientSession as context manager
+            session_obj = ClientSession(read, write)
+            session = await session_obj.__aenter__()
+            cls._session_contexts.append((session_obj, session))
+
             await session.initialize()
 
             cls._clients[server_name] = session
@@ -90,7 +95,11 @@ class MCPClientManager:
             read, write = await sse_context.__aenter__()
             cls._client_contexts.append(sse_context)
 
-            session = ClientSession(read, write)
+            # Also keep ClientSession as context manager
+            session_obj = ClientSession(read, write)
+            session = await session_obj.__aenter__()
+            cls._session_contexts.append((session_obj, session))
+
             await session.initialize()
 
             cls._clients[server_name] = session
@@ -101,33 +110,76 @@ class MCPClientManager:
 
     @classmethod
     async def _discover_tools(cls, session: ClientSession, server_name: str) -> None:
-        """Discover and register tools from an MCP server."""
-        from app.langgraph.tools.mcp_adapter import MCPToolAdapter, MCPToolDefinition
-
-        tools_response = await session.list_tools()
-
-        for tool_def in tools_response.tools:
-            try:
-                # Convert MCP tool to adapter
-                definition = MCPToolDefinition(
+        """Discover and register tools from an MCP server by creating LangChain StructuredTool instances."""
+        try:
+            # Get tool definitions from MCP server
+            tools_response = await session.list_tools()
+            
+            for tool_def in tools_response.tools:
+                # Create a LangChain StructuredTool
+                from langchain_core.tools import StructuredTool
+                from pydantic import create_model
+                import json
+                
+                # Create Pydantic model for tool arguments from inputSchema
+                if tool_def.inputSchema and tool_def.inputSchema.get('properties'):
+                    fields = {}
+                    for prop_name, prop_def in tool_def.inputSchema['properties'].items():
+                        # Simple type mapping - could be improved
+                        if prop_def.get('type') == 'string':
+                            fields[prop_name] = (str, ...)
+                        elif prop_def.get('type') == 'number':
+                            fields[prop_name] = (float, ...)
+                        elif prop_def.get('type') == 'integer':
+                            fields[prop_name] = (int, ...)
+                        elif prop_def.get('type') == 'boolean':
+                            fields[prop_name] = (bool, ...)
+                        else:
+                            fields[prop_name] = (str, ...)  # Default to string
+                    
+                    ArgsModel = create_model(f"{tool_def.name}Args", **fields)
+                else:
+                    ArgsModel = create_model(f"{tool_def.name}Args")  # Empty model
+                
+                # Create async function that calls the MCP tool
+                async def mcp_tool_func(**kwargs):
+                    try:
+                        # Preprocess arguments
+                        processed_kwargs = {}
+                        for k, v in kwargs.items():
+                            if k == 'url' and isinstance(v, str) and not v.startswith(('http://', 'https://')):
+                                processed_kwargs[k] = f'https://{v}'
+                            else:
+                                processed_kwargs[k] = v
+                        
+                        result = await session.call_tool(tool_def.name, processed_kwargs)
+                        # Extract text content from result
+                        if result.content and len(result.content) > 0:
+                            content = result.content[0]
+                            if hasattr(content, 'text'):
+                                return content.text
+                            else:
+                                return str(content)
+                        else:
+                            return ""
+                    except Exception as e:
+                        logger.error(f"MCP tool '{tool_def.name}' execution failed: {e}")
+                        return f"Error: {str(e)}"
+                
+                # Create StructuredTool
+                tool = StructuredTool.from_function(
+                    func=mcp_tool_func,
                     name=tool_def.name,
-                    description=tool_def.description or f"Tool: {tool_def.name}",
-                    input_schema=tool_def.inputSchema or {}
+                    description=tool_def.description or f"MCP tool: {tool_def.name}",
+                    args_schema=ArgsModel
                 )
+                
+                cls._tools.append(tool)
+                logger.info(f"Registered MCP tool: {tool_def.name}")
 
-                # Create adapter with namespace
-                adapter = MCPToolAdapter(
-                    definition=definition,
-                    session=session,
-                    namespace=server_name
-                )
-
-                cls._tools.append(adapter)
-                logger.info(f"Registered MCP tool: {adapter.__name__}")
-
-            except Exception as e:
-                logger.error(f"Failed to convert tool {tool_def.name}: {e}")
-                # Continue with other tools (graceful degradation)
+        except Exception as e:
+            logger.error(f"Failed to load tools from server '{server_name}': {e}")
+            # Continue gracefully (no tools from this server)
 
     @classmethod
     def get_tools(cls) -> List[Callable]:
@@ -139,14 +191,25 @@ class MCPClientManager:
         """Close all MCP client connections."""
         logger.info("Shutting down MCP client manager")
 
-        # Close all active context managers
+        # Clear references first to prevent new operations
+        cls._clients.clear()
+        cls._tools.clear()
+
+        # Close session contexts first (inner context)
+        for session_obj, session in cls._session_contexts:
+            try:
+                await session_obj.__aexit__(None, None, None)
+            except Exception as e:
+                logger.warning(f"Error closing MCP session context: {e}")
+
+        # Close client contexts (outer context)
         for context in cls._client_contexts:
             try:
                 await context.__aexit__(None, None, None)
             except Exception as e:
-                logger.error(f"Error closing MCP context: {e}")
+                logger.warning(f"Error closing MCP client context: {e}")
 
-        cls._clients.clear()
-        cls._tools.clear()
+        # Clear context lists after attempting cleanup
         cls._client_contexts.clear()
+        cls._session_contexts.clear()
         logger.info("MCP client manager shutdown complete")

@@ -13,12 +13,14 @@ def reset_mcp_manager():
     MCPClientManager._clients = {}
     MCPClientManager._tools = []
     MCPClientManager._client_contexts = []
+    MCPClientManager._session_contexts = []
     yield
     # Cleanup after test
     MCPClientManager._instance = None
     MCPClientManager._clients = {}
     MCPClientManager._tools = []
     MCPClientManager._client_contexts = []
+    MCPClientManager._session_contexts = []
 
 
 @pytest.mark.asyncio
@@ -129,3 +131,34 @@ async def test_connection_error_graceful_degradation(reset_mcp_manager):
         # Should complete with 0 tools but not crash
         assert len(MCPClientManager._tools) == 0
         assert len(MCPClientManager._clients) == 0
+
+
+@pytest.mark.asyncio
+async def test_structured_tools_have_correct_attributes(reset_mcp_manager):
+    """Test that StructuredTool instances created by MCP have .name and .description attributes."""
+    from langchain_core.tools import StructuredTool
+
+    # Create a mock StructuredTool similar to what MCP creates
+    def dummy_func(arg: str) -> str:
+        return f"Result: {arg}"
+
+    mock_tool = StructuredTool.from_function(
+        func=dummy_func,
+        name="test_mcp_tool",
+        description="A test MCP tool"
+    )
+
+    # Verify the tool has .name and .description (not __name__ and __doc__)
+    assert hasattr(mock_tool, 'name')
+    assert hasattr(mock_tool, 'description')
+    assert mock_tool.name == "test_mcp_tool"
+    assert mock_tool.description == "A test MCP tool"
+
+    # Verify it doesn't have __name__ (this is what was causing the error)
+    assert not hasattr(mock_tool, '__name__')
+
+    # Verify getattr with fallback works correctly
+    tool_name = getattr(mock_tool, 'name', getattr(mock_tool, '__name__', 'unknown'))
+    tool_description = getattr(mock_tool, 'description', getattr(mock_tool, '__doc__', ''))
+    assert tool_name == "test_mcp_tool"
+    assert tool_description == "A test MCP tool"

@@ -36,6 +36,7 @@ websockets>=12.0
 # Model Context Protocol
 mcp>=1.0.0
 mcp-server-fetch>=0.1.0
+langchain-mcp-adapters>=0.1.0
 
 # Vector Store & Embeddings
 chromadb==0.4.24
