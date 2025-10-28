@@ -317,6 +317,190 @@ Tool executions display as cards inline with messages:
 6. LLM generates final response incorporating tool result
 7. Tool execution cards cleared on message completion
 
+## MCP (Model Context Protocol) Integration
+
+Genesis supports dynamic tool discovery and execution via MCP servers, extending the chatbot's capabilities beyond native Python tools without code changes.
+
+### Architecture Decision
+
+MCP integration lives in the **infrastructure layer** (like ChromaDBClient), **not as a domain port**, to maintain simplicity while following hexagonal principles. This avoids over-engineering for a cross-cutting infrastructure concern.
+
+### Components
+
+**MCPClientManager** (`backend/app/infrastructure/mcp/mcp_client_manager.py`):
+- Singleton pattern for lifecycle management
+- Connects to MCP servers during app startup
+- Discovers tools from all configured servers
+- Maintains persistent sessions for tool execution
+- Graceful degradation on connection failures
+- 10-second timeout per server to prevent hanging
+
+**MCPToolAdapter** (`backend/app/langgraph/tools/mcp_adapter.py`):
+- Wraps MCP tool definitions as Python callables
+- Makes MCP tools compatible with LangChain's `bind_tools()`
+- Provides `__name__` and `__doc__` properties for introspection
+- Implements async `__call__` for tool execution via MCP session
+- Namespace support to prevent tool name conflicts (e.g., `server:tool_name`)
+
+**ToolRegistry** (`backend/app/langgraph/tool_metadata.py`):
+- Tracks tool sources (local vs mcp) for frontend display
+- Registers all tools at startup with metadata
+- Used by WebSocket handler to include source in messages
+
+**Configuration** (`backend/genesis_mcp.json`):
+```json
+[
+  {
+    "name": "fetch",
+    "transport": "stdio",
+    "command": "python",
+    "args": ["-m", "mcp_server_fetch"],
+    "env": {}
+  }
+]
+```
+
+### Tool Discovery Flow
+
+```
+1. App Startup
+   ↓
+2. MCPClientManager.initialize()
+   ↓
+3. For each server in genesis_mcp.json:
+   - Connect via stdio/SSE transport (with 10s timeout)
+   - Discover tools via MCP protocol
+   - Convert to MCPToolAdapter instances
+   - Register in ToolRegistry with source="mcp"
+   ↓
+4. Merge MCP tools + local tools
+   ↓
+5. Bind all tools to LLM provider
+   ↓
+6. Pass to ToolNode for execution
+```
+
+### Tool Execution Flow
+
+```
+1. LLM decides to call tool (AIMessage with tool_calls)
+   ↓
+2. ToolNode invokes tool by name
+   ↓
+3. If MCP tool:
+   - MCPToolAdapter.__call__() invoked
+   - Calls MCP server via persistent session
+   - Returns result as string
+   ↓
+4. Result wrapped in ToolMessage
+   ↓
+5. Checkpointed by LangGraph
+   ↓
+6. Frontend displays with MCP badge (purple border)
+```
+
+### Frontend Distinction
+
+MCP tools are visually distinguished from local tools:
+
+**MCP Tools**:
+- Purple left border (`border-l-purple-500`)
+- Purple "MCP" badge
+- Purple border on tool name badge
+
+**Local Tools**:
+- Blue left border (`border-l-blue-500`)
+- No badge
+- Standard blue border on tool name badge
+
+### Configuration
+
+**Environment Variables**:
+- `MCP_ENABLED`: Enable/disable MCP support (default: false)
+- `MCP_CONFIG_PATH`: Path to MCP config file (default: ./genesis_mcp.json)
+
+**Docker Compose**:
+```yaml
+environment:
+  - MCP_ENABLED=${MCP_ENABLED:-false}
+  - MCP_CONFIG_PATH=${MCP_CONFIG_PATH:-./genesis_mcp.json}
+```
+
+### Supported Transports
+
+1. **stdio**: Local process-based MCP servers
+   - Command: `python`, `node`, or any executable
+   - Args: Module name or script path
+   - Environment: Custom env vars
+
+2. **SSE (Server-Sent Events)**: Remote HTTP-based MCP servers
+   - URL: HTTP(S) endpoint
+   - Streaming: Persistent connection
+
+### Error Handling
+
+**Graceful Degradation**:
+- MCP disabled → Application works with local tools only
+- No config file → Application starts normally
+- Server connection timeout (10s) → Skip that server, continue with others
+- Server connection fails → Log error, continue with remaining servers
+- Tool execution error → Return error message to LLM, don't crash
+
+**Logging**:
+- Server connection attempts logged at INFO level
+- Tool discovery logged at INFO level
+- Connection failures logged at ERROR level
+- Tool execution logged at INFO level
+
+### Lifecycle Management
+
+**Startup** (`main.py:lifespan`):
+```python
+# After ChromaDB, before graph compilation
+await MCPClientManager.initialize()
+app.state.mcp_manager = MCPClientManager
+```
+
+**Shutdown** (`main.py:lifespan`):
+```python
+# During cleanup
+if app.state.mcp_manager:
+    await MCPClientManager.shutdown()
+```
+
+### Adding MCP Servers
+
+1. Install MCP server: `pip install mcp-server-fetch`
+2. Add to `backend/genesis_mcp.json`:
+   ```json
+   {
+     "name": "fetch",
+     "transport": "stdio",
+     "command": "python",
+     "args": ["-m", "mcp_server_fetch"]
+   }
+   ```
+3. Enable MCP: `MCP_ENABLED=true` in `.env`
+4. Restart application
+
+No code changes required! Tools are automatically discovered and available.
+
+### Benefits
+
+- ✅ **Dynamic discovery**: Add tools via configuration, no code changes
+- ✅ **Ecosystem access**: Leverage growing MCP server ecosystem
+- ✅ **Environment-specific**: Different tools per dev/staging/production
+- ✅ **Easy testing**: Swap between test and production servers
+- ✅ **Graceful degradation**: Application works even if MCP unavailable
+- ✅ **Visual distinction**: Frontend clearly shows MCP vs local tools
+
+### Trade-offs
+
+- Adds startup time (connection to MCP servers)
+- Requires external MCP server processes/services
+- Tool naming must be managed to avoid conflicts (via namespacing)
+- MCP protocol is less mature than native Python tools
+
 ## Extension Points
 
 The architecture makes it easy to add:
