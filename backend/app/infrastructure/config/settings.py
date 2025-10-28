@@ -1,6 +1,8 @@
 # ABOUTME: Application settings and configuration management using Pydantic Settings
 # ABOUTME: Loads environment variables and provides type-safe access to configuration values
 
+import json
+from pathlib import Path
 from typing import Optional
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -91,6 +93,29 @@ class Settings(BaseSettings):
     retrieval_similarity_threshold: float = 0.5
     retrieval_chunk_size: int = 512
     retrieval_chunk_overlap: int = 50
+
+    # MCP Settings
+    mcp_enabled: bool = False
+    mcp_config_path: str = "./genesis_mcp.json"
+
+    @property
+    def get_mcp_servers(self) -> list[dict]:
+        """Load MCP servers from config file."""
+        if not self.mcp_enabled:
+            return []
+
+        config_path = Path(self.mcp_config_path)
+        if config_path.exists():
+            try:
+                from app.infrastructure.config.logging_config import get_logger
+                logger = get_logger(__name__)
+                return json.loads(config_path.read_text())
+            except Exception as e:
+                from app.infrastructure.config.logging_config import get_logger
+                logger = get_logger(__name__)
+                logger.error(f"Failed to load MCP config: {e}")
+                return []
+        return []
 
 
 # Global settings instance

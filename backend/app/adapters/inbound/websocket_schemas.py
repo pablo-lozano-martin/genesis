@@ -89,6 +89,10 @@ class ServerToolStartMessage(BaseModel):
     type: Literal[MessageType.TOOL_START] = MessageType.TOOL_START
     tool_name: str = Field(..., description="Name of the tool being executed")
     tool_input: str = Field(..., description="JSON string of input arguments")
+    source: Optional[str] = Field(
+        default="local",
+        description="Tool source: 'local' for Python tools, 'mcp' for MCP protocol tools"
+    )
     timestamp: str = Field(
         default_factory=lambda: datetime.utcnow().isoformat(),
         description="ISO timestamp of tool start"
@@ -105,6 +109,10 @@ class ServerToolCompleteMessage(BaseModel):
     type: Literal[MessageType.TOOL_COMPLETE] = MessageType.TOOL_COMPLETE
     tool_name: str = Field(..., description="Name of the tool that completed")
     tool_result: str = Field(..., description="String representation of tool result")
+    source: Optional[str] = Field(
+        default="local",
+        description="Tool source: 'local' for Python tools, 'mcp' for MCP protocol tools"
+    )
     timestamp: str = Field(
         default_factory=lambda: datetime.utcnow().isoformat(),
         description="ISO timestamp of tool completion"

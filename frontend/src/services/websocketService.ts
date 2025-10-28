@@ -45,6 +45,7 @@ export interface ServerToolStartMessage {
   type: typeof MessageType.TOOL_START;
   tool_name: string;
   tool_input: string;
+  source?: "local" | "mcp";
   timestamp: string;
 }
 
@@ -52,6 +53,7 @@ export interface ServerToolCompleteMessage {
   type: typeof MessageType.TOOL_COMPLETE;
   tool_name: string;
   tool_result: string;
+  source?: "local" | "mcp";
   timestamp: string;
 }
 
@@ -71,8 +73,8 @@ export interface WebSocketConfig {
   onError?: (error: string, code?: string) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
-  onToolStart?: (toolName: string, toolInput: string) => void;
-  onToolComplete?: (toolName: string, toolResult: string) => void;
+  onToolStart?: (toolName: string, toolInput: string, source?: string) => void;
+  onToolComplete?: (toolName: string, toolResult: string, source?: string) => void;
 }
 
 export class WebSocketService {
@@ -153,11 +155,11 @@ export class WebSocketService {
           break;
 
         case MessageType.TOOL_START:
-          this.config.onToolStart?.(message.tool_name, message.tool_input);
+          this.config.onToolStart?.(message.tool_name, message.tool_input, message.source);
           break;
 
         case MessageType.TOOL_COMPLETE:
-          this.config.onToolComplete?.(message.tool_name, message.tool_result);
+          this.config.onToolComplete?.(message.tool_name, message.tool_result, message.source);
           break;
 
         default:

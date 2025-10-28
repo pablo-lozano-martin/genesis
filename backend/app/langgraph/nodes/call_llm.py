@@ -34,11 +34,26 @@ async def call_llm(state: ConversationState, config: RunnableConfig) -> dict:
 
     logger.info(f"Calling LLM for conversation {conversation_id} with {len(messages)} messages")
 
-    tools = [multiply, add, web_search, rag_search]
+    # Get local Python tools
+    local_tools = [multiply, add, rag_search]
+
+    # Get MCP tools from manager
+    mcp_tools = []
+    try:
+        from app.infrastructure.mcp import MCPClientManager
+        mcp_manager = MCPClientManager()
+        mcp_tools = mcp_manager.get_tools()
+        if mcp_tools:
+            logger.info(f"Binding {len(mcp_tools)} MCP tools to LLM")
+    except Exception as e:
+        logger.warning(f"Failed to load MCP tools: {e}")
+
+    # Combine all tools
+    all_tools = local_tools + mcp_tools
 
     # Get LLM provider from config
     llm_provider = config["configurable"]["llm_provider"]
-    llm_provider_with_tools = llm_provider.bind_tools(tools, parallel_tool_calls=False)
+    llm_provider_with_tools = llm_provider.bind_tools(all_tools, parallel_tool_calls=False)
 
     # Generate response (llm_provider_with_tools.generate should work with BaseMessage types)
     ai_message = await llm_provider_with_tools.generate(messages)

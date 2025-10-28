@@ -25,6 +25,8 @@ services:
       - OLLAMA_MODEL=${OLLAMA_MODEL}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - DEBUG=${DEBUG:-true}
+      - MCP_ENABLED=${MCP_ENABLED:-false}
+      - MCP_CONFIG_PATH=${MCP_CONFIG_PATH:-./genesis_mcp.json}
     depends_on:
       - mongodb
     volumes:

@@ -48,17 +48,66 @@ async def lifespan(app: FastAPI):
     app.state.vector_store = get_vector_store(ChromaDBClient.client)
     logger.info("Vector store initialized")
 
+    # Initialize MCP client manager
+    from app.infrastructure.mcp import MCPClientManager
+    try:
+        await MCPClientManager.initialize()
+        app.state.mcp_manager = MCPClientManager
+        logger.info("MCP client manager initialized")
+    except Exception as e:
+        logger.error(f"MCP initialization failed: {e}")
+        app.state.mcp_manager = None
+
     # Initialize LangGraph checkpointer with proper lifecycle management
     checkpointer_context, checkpointer = await get_checkpointer()
     app.state.checkpointer_context = checkpointer_context
     app.state.checkpointer = checkpointer
 
-    # Compile LangGraph graphs with checkpointer
+    # Compile LangGraph graphs with checkpointer and combined tools
     from app.langgraph.graphs.chat_graph import create_chat_graph
     from app.langgraph.graphs.streaming_chat_graph import create_streaming_chat_graph
+    from app.langgraph.tools.multiply import multiply
+    from app.langgraph.tools.add import add
+    from app.langgraph.tools.web_search import web_search
+    from app.langgraph.tools.rag_search import rag_search
 
-    app.state.chat_graph = create_chat_graph(checkpointer)
-    app.state.streaming_chat_graph = create_streaming_chat_graph(checkpointer)
+    # Combine local and MCP tools
+    local_tools = [multiply, add, web_search, rag_search]
+    mcp_tools = MCPClientManager.get_tools() if app.state.mcp_manager else []
+    all_tools = local_tools + mcp_tools
+
+    # Register tools in metadata registry
+    from app.langgraph.tool_metadata import get_tool_registry, ToolMetadata, ToolSource
+
+    tool_registry = get_tool_registry()
+
+    # Register local tools
+    for tool in local_tools:
+        # Local tools are Python functions with __name__ and __doc__
+        tool_registry.register_tool(ToolMetadata(
+            name=tool.__name__,
+            description=tool.__doc__ or f"Local Python tool: {tool.__name__}",
+            source=ToolSource.LOCAL
+        ))
+
+    # Register MCP tools
+    for tool in mcp_tools:
+        # MCP tools are StructuredTool instances with .name and .description
+        tool_name = getattr(tool, 'name', getattr(tool, '__name__', 'unknown'))
+        tool_description = getattr(tool, 'description', getattr(tool, '__doc__', ''))
+        tool_registry.register_tool(ToolMetadata(
+            name=tool_name,
+            description=tool_description,
+            source=ToolSource.MCP
+        ))
+
+    app.state.tool_registry = tool_registry
+    logger.info(f"Tool registry initialized with {len(tool_registry.get_all_tools())} tools")
+
+    logger.info(f"Compiling graphs with {len(local_tools)} local tools and {len(mcp_tools)} MCP tools")
+
+    app.state.chat_graph = create_chat_graph(checkpointer, all_tools)
+    app.state.streaming_chat_graph = create_streaming_chat_graph(checkpointer, all_tools)
     logger.info("LangGraph graphs compiled with checkpointing enabled")
 
     logger.info("Application startup complete")
@@ -67,6 +116,12 @@ async def lifespan(app: FastAPI):
 
     # Shutdown: Close database connections
     logger.info("Shutting down application")
+
+    # Shutdown MCP
+    if hasattr(app.state, 'mcp_manager') and app.state.mcp_manager:
+        from app.infrastructure.mcp import MCPClientManager
+        await MCPClientManager.shutdown()
+
     ChromaDBClient.close()
     await AppDatabase.close()
     # Properly exit AsyncMongoDBSaver context manager

@@ -7,7 +7,13 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
     gcc \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Install uv (provides uvx for MCP servers)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    echo 'export PATH="/root/.local/bin:$PATH"' >> /root/.bashrc
+ENV PATH="/root/.local/bin:${PATH}"
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
