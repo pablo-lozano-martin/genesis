@@ -68,11 +68,10 @@ async def lifespan(app: FastAPI):
     from app.langgraph.graphs.streaming_chat_graph import create_streaming_chat_graph
     from app.langgraph.tools.multiply import multiply
     from app.langgraph.tools.add import add
-    from app.langgraph.tools.web_search import web_search
     from app.langgraph.tools.rag_search import rag_search
 
     # Combine local and MCP tools
-    local_tools = [multiply, add, web_search, rag_search]
+    local_tools = [multiply, add, rag_search]
     mcp_tools = MCPClientManager.get_tools() if app.state.mcp_manager else []
     all_tools = local_tools + mcp_tools
 

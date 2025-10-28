@@ -6,7 +6,6 @@ from langchain_core.messages import AIMessage
 from app.langgraph.state import ConversationState
 from app.langgraph.tools.multiply import multiply
 from app.langgraph.tools.add import add
-from app.langgraph.tools.web_search import web_search
 from app.langgraph.tools.rag_search import rag_search
 from app.infrastructure.config.logging_config import get_logger
 

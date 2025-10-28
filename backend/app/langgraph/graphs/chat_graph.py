@@ -11,7 +11,6 @@ from app.langgraph.nodes.call_llm import call_llm
 from app.infrastructure.config.logging_config import get_logger
 from app.langgraph.tools.multiply import multiply
 from app.langgraph.tools.add import add
-from app.langgraph.tools.web_search import web_search
 from app.langgraph.tools.rag_search import rag_search
 
 
@@ -43,7 +42,7 @@ def create_chat_graph(checkpointer: AsyncMongoDBSaver, tools: Optional[List[Call
 
     if tools is None:
         # Default to local tools
-        tools = [multiply, add, web_search, rag_search]
+        tools = [multiply, add, rag_search]
 
     # Add nodes (no format_response, no save_history - automatic now)
     graph_builder.add_node("process_input", process_user_input)

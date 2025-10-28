@@ -10,7 +10,6 @@ from app.langgraph.nodes.process_input import process_user_input
 from app.langgraph.nodes.call_llm import call_llm
 from app.langgraph.tools.multiply import multiply
 from app.langgraph.tools.add import add
-from app.langgraph.tools.web_search import web_search
 from app.langgraph.tools.rag_search import rag_search
 from app.infrastructure.config.logging_config import get_logger
 
@@ -45,7 +44,7 @@ def create_streaming_chat_graph(checkpointer: AsyncMongoDBSaver, tools: Optional
 
     if tools is None:
         # Default to local tools
-        tools = [multiply, add, web_search, rag_search]
+        tools = [multiply, add, rag_search]
 
     # Add nodes (streaming handled by astream_events at invocation level)
     graph_builder.add_node("process_input", process_user_input)

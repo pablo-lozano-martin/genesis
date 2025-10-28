@@ -33,8 +33,7 @@ This analysis reviews authentication patterns, file upload capabilities, admin e
 - `/Users/pablolozano/Mac Projects August/genesis/backend/app/adapters/outbound/repositories/mongo_user_repository.py` - MongoDB user repository implementation
 
 **LangGraph Integration:**
-- `/Users/pablolozano/Mac Projects August/genesis/backend/app/langgraph/graphs/streaming_chat_graph.py` - Tool registration and graph compilation with tools=[multiply, add, web_search]
-- `/Users/pablolozano/Mac Projects August/genesis/backend/app/langgraph/tools/web_search.py` - Example tool implementation showing DuckDuckGoSearchResults
+- `/Users/pablolozano/Mac Projects August/genesis/backend/app/langgraph/graphs/streaming_chat_graph.py` - Tool registration and graph compilation with tools=[multiply, add]
 - `/Users/pablolozano/Mac Projects August/genesis/backend/app/langgraph/tools/__init__.py` - Tool module exports
 
 **Configuration & Infrastructure:**
@@ -772,7 +771,7 @@ async def rag_search(
 from app.langgraph.tools.rag_search import rag_search
 
 # In create_streaming_chat_graph():
-tools = [multiply, add, web_search, rag_search]
+tools = [multiply, add, rag_search]
 graph_builder.add_node("tools", ToolNode(tools))
 ```
 
@@ -782,10 +781,9 @@ graph_builder.add_node("tools", ToolNode(tools))
 
 from .multiply import multiply
 from .add import add
-from .web_search import web_search
 from .rag_search import rag_search
 
-__all__ = ["multiply", "add", "web_search", "rag_search"]
+__all__ = ["multiply", "add", "rag_search"]
 ```
 
 ### Use Case Layer
