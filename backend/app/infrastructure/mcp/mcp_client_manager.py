@@ -142,33 +142,43 @@ class MCPClientManager:
                     ArgsModel = create_model(f"{tool_def.name}Args")  # Empty model
                 
                 # Create async function that calls the MCP tool
-                async def mcp_tool_func(**kwargs):
-                    try:
-                        # Preprocess arguments
-                        processed_kwargs = {}
-                        for k, v in kwargs.items():
-                            if k == 'url' and isinstance(v, str) and not v.startswith(('http://', 'https://')):
-                                processed_kwargs[k] = f'https://{v}'
+                # Use factory function to properly capture tool_name in closure
+                def make_mcp_tool_func(tool_name: str, mcp_session: ClientSession):
+                    async def mcp_tool_func(**kwargs):
+                        try:
+                            # Preprocess arguments
+                            processed_kwargs = {}
+                            for k, v in kwargs.items():
+                                if k == 'url' and isinstance(v, str) and not v.startswith(('http://', 'https://')):
+                                    processed_kwargs[k] = f'https://{v}'
+                                else:
+                                    processed_kwargs[k] = v
+
+                            logger.info(f"MCP tool '{tool_name}' called with args: {processed_kwargs}")
+                            result = await mcp_session.call_tool(tool_name, processed_kwargs)
+
+                            # Extract text content from result
+                            if result.content and len(result.content) > 0:
+                                content = result.content[0]
+                                if hasattr(content, 'text'):
+                                    result_text = content.text
+                                    logger.info(f"MCP tool '{tool_name}' returned {len(result_text)} characters")
+                                    return result_text
+                                else:
+                                    result_str = str(content)
+                                    logger.info(f"MCP tool '{tool_name}' returned content (as string): {len(result_str)} characters")
+                                    return result_str
                             else:
-                                processed_kwargs[k] = v
-                        
-                        result = await session.call_tool(tool_def.name, processed_kwargs)
-                        # Extract text content from result
-                        if result.content and len(result.content) > 0:
-                            content = result.content[0]
-                            if hasattr(content, 'text'):
-                                return content.text
-                            else:
-                                return str(content)
-                        else:
-                            return ""
-                    except Exception as e:
-                        logger.error(f"MCP tool '{tool_def.name}' execution failed: {e}")
-                        return f"Error: {str(e)}"
-                
-                # Create StructuredTool
+                                logger.warning(f"MCP tool '{tool_name}' returned empty content")
+                                return ""
+                        except Exception as e:
+                            logger.error(f"MCP tool '{tool_name}' execution failed: {e}")
+                            return f"Error: {str(e)}"
+                    return mcp_tool_func
+
+                # Create StructuredTool with async coroutine
                 tool = StructuredTool.from_function(
-                    func=mcp_tool_func,
+                    coroutine=make_mcp_tool_func(tool_def.name, session),
                     name=tool_def.name,
                     description=tool_def.description or f"MCP tool: {tool_def.name}",
                     args_schema=ArgsModel

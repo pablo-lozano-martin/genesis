@@ -171,13 +171,14 @@ async def handle_websocket_chat(
                                 tool_name = current_tool_call.get("name", "unknown")
 
                                 # Get tool source from registry
+                                # Note: source is already a string due to use_enum_values=True in ToolMetadata
                                 tool_source = "local"
                                 if hasattr(websocket.app.state, 'tool_registry'):
                                     from app.langgraph.tool_metadata import get_tool_registry
                                     registry = get_tool_registry()
                                     source = registry.get_tool_source(tool_name)
                                     if source:
-                                        tool_source = source.value
+                                        tool_source = source
 
                                 tool_start_msg = ServerToolStartMessage(
                                     tool_name=tool_name,
@@ -193,13 +194,14 @@ async def handle_websocket_chat(
                                 tool_result = event["data"].get("output", "")
 
                                 # Get tool source from registry
+                                # Note: source is already a string due to use_enum_values=True in ToolMetadata
                                 tool_source = "local"
                                 if hasattr(websocket.app.state, 'tool_registry'):
                                     from app.langgraph.tool_metadata import get_tool_registry
                                     registry = get_tool_registry()
                                     source = registry.get_tool_source(tool_name)
                                     if source:
-                                        tool_source = source.value
+                                        tool_source = source
 
                                 tool_complete_msg = ServerToolCompleteMessage(
                                     tool_name=tool_name,
