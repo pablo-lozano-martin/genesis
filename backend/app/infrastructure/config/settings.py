@@ -100,22 +100,74 @@ class Settings(BaseSettings):
 
     @property
     def get_mcp_servers(self) -> list[dict]:
-        """Load MCP servers from config file."""
+        """
+        Load MCP servers from config file in standard format.
+
+        Expected format (standard MCP format):
+        {
+          "mcpServers": {
+            "server-name": {
+              "command": "python",
+              "args": ["-m", "mcp_server_fetch"],
+              "env": {"KEY": "value"}  // optional
+            }
+          }
+        }
+
+        Returns list of server configs with normalized structure:
+        [
+          {
+            "name": "server-name",
+            "transport": "stdio",
+            "command": "python",
+            "args": ["-m", "mcp_server_fetch"],
+            "env": {"KEY": "value"}
+          }
+        ]
+        """
         if not self.mcp_enabled:
             return []
 
         config_path = Path(self.mcp_config_path)
-        if config_path.exists():
-            try:
-                from app.infrastructure.config.logging_config import get_logger
-                logger = get_logger(__name__)
-                return json.loads(config_path.read_text())
-            except Exception as e:
-                from app.infrastructure.config.logging_config import get_logger
-                logger = get_logger(__name__)
-                logger.error(f"Failed to load MCP config: {e}")
+        if not config_path.exists():
+            return []
+
+        try:
+            from app.infrastructure.config.logging_config import get_logger
+            logger = get_logger(__name__)
+
+            config = json.loads(config_path.read_text())
+
+            # Parse standard MCP format
+            if "mcpServers" not in config:
+                logger.error("Invalid MCP config: missing 'mcpServers' key")
                 return []
-        return []
+
+            servers = []
+            for server_name, server_config in config["mcpServers"].items():
+                # Validate required fields
+                if "command" not in server_config:
+                    logger.error(f"MCP server '{server_name}' missing required 'command' field")
+                    continue
+
+                # Normalize to internal format
+                normalized = {
+                    "name": server_name,
+                    "transport": "stdio",  # Default transport
+                    "command": server_config["command"],
+                    "args": server_config.get("args", []),
+                    "env": server_config.get("env", {})
+                }
+                servers.append(normalized)
+
+            logger.info(f"Loaded {len(servers)} MCP server(s) from config")
+            return servers
+
+        except Exception as e:
+            from app.infrastructure.config.logging_config import get_logger
+            logger = get_logger(__name__)
+            logger.error(f"Failed to load MCP config: {e}")
+            return []
 
 
 # Global settings instance
