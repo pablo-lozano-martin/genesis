@@ -41,7 +41,14 @@ class MCPClientManager:
 
         for server_config in mcp_servers:
             try:
-                await cls._connect_server(server_config)
+                # Add timeout to prevent hanging
+                await asyncio.wait_for(
+                    cls._connect_server(server_config),
+                    timeout=10.0  # 10 second timeout
+                )
+            except asyncio.TimeoutError:
+                logger.error(f"Timeout connecting to MCP server '{server_config.get('name')}' after 10 seconds")
+                # Continue with other servers (graceful degradation)
             except Exception as e:
                 logger.error(f"Failed to connect to MCP server '{server_config.get('name')}': {e}")
                 # Continue with other servers (graceful degradation)
