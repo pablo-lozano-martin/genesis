@@ -79,7 +79,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const token = authService.getToken() || "";
   const { isConnected, error, sendMessage: wsSendMessage, streamingMessage: wsStreamingMessage } = useWebSocket({
-    url: `${WS_URL}/ws/chat`,
+    url: `${WS_URL}/ws/onboarding`,
     token,
     autoConnect: true,
     onToolStart: handleToolStart,

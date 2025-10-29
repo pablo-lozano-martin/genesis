@@ -59,9 +59,13 @@ async def get_messages_endpoint(
     base_messages = await get_conversation_messages(graph, conversation_id)
 
     # Convert BaseMessage objects to MessageResponse format
-    # Filter out internal execution details (tool calls/responses)
+    # Filter out internal execution details (tool calls/responses, system messages)
     messages = []
     for msg in base_messages:
+        # Skip system messages (internal prompts, not user-facing)
+        if msg.type == "system":
+            continue
+
         # Skip tool messages (internal LangGraph execution details)
         if msg.type == "tool":
             continue
@@ -79,8 +83,6 @@ async def get_messages_endpoint(
             role = MessageRole.USER
         elif msg.type == "ai":
             role = MessageRole.ASSISTANT
-        elif msg.type == "system":
-            role = MessageRole.SYSTEM
         else:
             role = MessageRole.USER  # Default fallback
 
