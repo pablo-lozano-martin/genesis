@@ -35,22 +35,30 @@ async def call_llm(state: ConversationState, config: RunnableConfig) -> dict:
 
     logger.info(f"Calling LLM for conversation {conversation_id} with {len(messages)} messages")
 
-    # Get local Python tools
-    local_tools = [multiply, add, rag_search, read_data, write_data]
+    # Check if tools are provided in config (used by specialized graphs like onboarding)
+    config_tools = config.get("configurable", {}).get("tools")
 
-    # Get MCP tools from manager
-    mcp_tools = []
-    try:
-        from app.infrastructure.mcp import MCPClientManager
-        mcp_manager = MCPClientManager()
-        mcp_tools = mcp_manager.get_tools()
-        if mcp_tools:
-            logger.info(f"Binding {len(mcp_tools)} MCP tools to LLM")
-    except Exception as e:
-        logger.warning(f"Failed to load MCP tools: {e}")
+    if config_tools is not None:
+        # Use tools from config (e.g., onboarding graph with specific tools)
+        all_tools = config_tools
+        logger.info(f"Using {len(all_tools)} tools from graph configuration")
+    else:
+        # Default behavior: use local tools + MCP tools (for chat graphs)
+        local_tools = [multiply, add, rag_search, read_data, write_data]
 
-    # Combine all tools
-    all_tools = local_tools + mcp_tools
+        # Get MCP tools from manager
+        mcp_tools = []
+        try:
+            from app.infrastructure.mcp import MCPClientManager
+            mcp_manager = MCPClientManager()
+            mcp_tools = mcp_manager.get_tools()
+            if mcp_tools:
+                logger.info(f"Binding {len(mcp_tools)} MCP tools to LLM")
+        except Exception as e:
+            logger.warning(f"Failed to load MCP tools: {e}")
+
+        # Combine all tools
+        all_tools = local_tools + mcp_tools
 
     # Get LLM provider from config
     llm_provider = config["configurable"]["llm_provider"]

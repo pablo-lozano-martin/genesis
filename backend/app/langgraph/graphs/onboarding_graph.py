@@ -91,6 +91,9 @@ def create_onboarding_graph(
 
     compiled_graph = graph_builder.compile(checkpointer=checkpointer)
 
+    # Store tools as metadata for access in call_llm node
+    compiled_graph._tools = tools
+
     logger.info("Onboarding graph compiled with system prompt injection and ReAct pattern")
 
     return compiled_graph

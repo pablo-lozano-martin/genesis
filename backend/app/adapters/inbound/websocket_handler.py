@@ -119,12 +119,16 @@ async def handle_websocket_chat(
                     await manager.send_message(websocket, error_msg.model_dump())
                     continue
 
+                # Get tools from graph metadata if available
+                tools = getattr(graph, '_tools', None)
+
                 # Create RunnableConfig with thread_id (conversation.id) and llm_provider
                 config = RunnableConfig(
                     configurable={
                         "thread_id": conversation.id,
                         "llm_provider": llm_provider,
-                        "user_id": user.id
+                        "user_id": user.id,
+                        "tools": tools  # Pass tools to call_llm node
                     }
                 )
 
