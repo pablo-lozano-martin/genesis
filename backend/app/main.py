@@ -109,9 +109,12 @@ async def lifespan(app: FastAPI):
 
     logger.info(f"Compiling graphs with {len(local_tools)} local tools and {len(mcp_tools)} MCP tools")
 
+    # Onboarding graph uses only specific tools (no MCP, no multiply/add)
+    onboarding_tools = [read_data, write_data, rag_search, export_data]
+
     app.state.chat_graph = create_chat_graph(checkpointer, all_tools)
     app.state.streaming_chat_graph = create_streaming_chat_graph(checkpointer, all_tools)
-    app.state.onboarding_graph = create_onboarding_graph(checkpointer, all_tools)
+    app.state.onboarding_graph = create_onboarding_graph(checkpointer, onboarding_tools)
     logger.info("LangGraph graphs compiled with checkpointing enabled")
 
     logger.info("Application startup complete")
