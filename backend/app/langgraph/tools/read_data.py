@@ -30,7 +30,7 @@ async def read_data(
         state: Current ConversationState (passed by LangGraph)
         field_names: Optional list of specific field names to query.
                     If None, returns all onboarding fields.
-                    Example: ["employee_name", "employee_id"]
+                    E.g., ["employee_name", "employee_id"]
 
     Returns:
         Dictionary with field names and current values:
