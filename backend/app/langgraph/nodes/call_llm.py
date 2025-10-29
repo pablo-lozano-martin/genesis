@@ -7,6 +7,8 @@ from app.langgraph.state import ConversationState
 from app.langgraph.tools.multiply import multiply
 from app.langgraph.tools.add import add
 from app.langgraph.tools.rag_search import rag_search
+from app.langgraph.tools.read_data import read_data
+from app.langgraph.tools.write_data import write_data
 from app.infrastructure.config.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -34,7 +36,7 @@ async def call_llm(state: ConversationState, config: RunnableConfig) -> dict:
     logger.info(f"Calling LLM for conversation {conversation_id} with {len(messages)} messages")
 
     # Get local Python tools
-    local_tools = [multiply, add, rag_search]
+    local_tools = [multiply, add, rag_search, read_data, write_data]
 
     # Get MCP tools from manager
     mcp_tools = []
