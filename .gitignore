@@ -101,3 +101,6 @@ coverage/
 
 # ChromaDB vector database
 chroma_db/
+
+# Onboarding data exports
+backend/onboarding_data/

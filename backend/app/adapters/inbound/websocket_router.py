@@ -61,3 +61,52 @@ async def websocket_chat_endpoint(websocket: WebSocket):
     except Exception as e:
         logger.error(f"Unexpected error in WebSocket endpoint: {e}")
         await websocket.close(code=1011, reason="Internal server error")
+
+
+@router.websocket("/ws/onboarding")
+async def websocket_onboarding_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint for onboarding conversations.
+
+    This endpoint uses the onboarding_graph with ReAct pattern for proactive
+    data collection. The agent guides new employees through providing required
+    information in a natural, conversational way.
+
+    Authentication:
+    - Send token as query parameter: /ws/onboarding?token=<jwt_token>
+    - Or send in Authorization header: Bearer <jwt_token>
+
+    Protocol:
+    - Client sends: {"type": "message", "conversation_id": "uuid", "content": "..."}
+    - Server streams: {"type": "token", "content": "..."}
+    - Server streams: {"type": "tool_start", "tool_name": "..."}
+    - Server streams: {"type": "tool_complete", "tool_name": "..."}
+    - Server completes: {"type": "complete", "conversation_id": "uuid"}
+    - Server errors: {"type": "error", "message": "...", "code": "..."}
+
+    Raises:
+        WebSocketException: If authentication fails
+    """
+    try:
+        user = await get_user_from_websocket(websocket)
+
+        # Get onboarding graph from app state
+        graph = websocket.app.state.onboarding_graph
+
+        llm_provider = get_llm_provider()
+        conversation_repository = MongoConversationRepository()
+
+        await handle_websocket_chat(
+            websocket=websocket,
+            user=user,
+            graph=graph,
+            llm_provider=llm_provider,
+            conversation_repository=conversation_repository
+        )
+
+    except WebSocketException as e:
+        logger.error(f"WebSocket authentication failed: {e.reason}")
+        await websocket.close(code=e.code, reason=e.reason)
+    except Exception as e:
+        logger.error(f"Unexpected error in WebSocket onboarding endpoint: {e}")
+        await websocket.close(code=1011, reason="Internal server error")
