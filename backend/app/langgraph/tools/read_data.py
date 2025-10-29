@@ -43,14 +43,6 @@ async def read_data(
             "conversation_summary": "..." or None,
             "status": "success"
         }
-
-    Example:
-        Agent calls: read_data(field_names=["employee_name", "employee_id"])
-        Returns: {
-            "employee_name": None,
-            "employee_id": "EMP-123",
-            "status": "success"
-        }
     """
     # Define all available onboarding fields
     all_onboarding_fields = [

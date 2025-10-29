@@ -72,41 +72,10 @@ async def write_data(
         comments: Optional agent-provided comments about the data
 
     Returns:
-        Dictionary with write result:
-
-        Success case:
-        {
-            "field_name": "employee_name",
-            "value": "John Doe",
-            "status": "success",
-            "message": "Data recorded"
-        }
-
-        Validation error case:
-        {
-            "field_name": "starter_kit",
-            "value": "invalid_option",
-            "status": "error",
-            "message": "Invalid starter_kit value 'invalid_option'. Must be one of: mouse, keyboard, backpack",
-            "valid_values": ["mouse", "keyboard", "backpack"]
-        }
-
-        Invalid field case:
-        {
-            "field_name": "unknown_field",
-            "status": "error",
-            "message": "Unknown field 'unknown_field'",
-            "valid_fields": ["employee_name", "employee_id", ...]
-        }
-
-    Example:
-        Agent calls: write_data(field_name="employee_name", value="John Doe")
-        Returns: {
-            "field_name": "employee_name",
-            "value": "John Doe",
-            "status": "success",
-            "message": "Data recorded"
-        }
+        Dictionary with write result. Success case returns field_name, value,
+        status='success', and message='Data recorded'. Validation errors return
+        status='error' with message and valid_values for constrained fields.
+        Invalid field names return status='error' with valid_fields list.
     """
     # Validate field_name exists in ConversationState
     valid_fields = [
