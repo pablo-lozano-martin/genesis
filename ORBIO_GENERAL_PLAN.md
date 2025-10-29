@@ -4,7 +4,7 @@
 
 Build an MVP onboarding chatbot for Orbio that demonstrates solid LLM agent concepts and techniques. The goal is to showcase technical capabilities with the Genesis template, focusing on natural conversation flow, ReAct workflow patterns, and RAG integration.
 
-**Timeline**: 2 days
+**Timeline**: 1 day
 **Approach**: MVP first, then enhancements
 
 ---
