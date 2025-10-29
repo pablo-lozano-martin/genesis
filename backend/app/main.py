@@ -66,12 +66,16 @@ async def lifespan(app: FastAPI):
     # Compile LangGraph graphs with checkpointer and combined tools
     from app.langgraph.graphs.chat_graph import create_chat_graph
     from app.langgraph.graphs.streaming_chat_graph import create_streaming_chat_graph
+    from app.langgraph.graphs.onboarding_graph import create_onboarding_graph
     from app.langgraph.tools.multiply import multiply
     from app.langgraph.tools.add import add
     from app.langgraph.tools.rag_search import rag_search
+    from app.langgraph.tools.read_data import read_data
+    from app.langgraph.tools.write_data import write_data
+    from app.langgraph.tools.export_data import export_data
 
     # Combine local and MCP tools
-    local_tools = [multiply, add, rag_search]
+    local_tools = [multiply, add, rag_search, read_data, write_data, export_data]
     mcp_tools = MCPClientManager.get_tools() if app.state.mcp_manager else []
     all_tools = local_tools + mcp_tools
 
@@ -107,6 +111,7 @@ async def lifespan(app: FastAPI):
 
     app.state.chat_graph = create_chat_graph(checkpointer, all_tools)
     app.state.streaming_chat_graph = create_streaming_chat_graph(checkpointer, all_tools)
+    app.state.onboarding_graph = create_onboarding_graph(checkpointer, all_tools)
     logger.info("LangGraph graphs compiled with checkpointing enabled")
 
     logger.info("Application startup complete")
