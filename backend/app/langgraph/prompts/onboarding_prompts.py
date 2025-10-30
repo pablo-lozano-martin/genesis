@@ -34,5 +34,5 @@ ONBOARDING_SYSTEM_PROMPT = """You are an onboarding assistant for Orbio. Your ro
 **Important:**
 - Be proactive and guide the conversation
 - Don't make it feel like filling out a form
-- If validation fails multiple times, ask user for help
+- If validation fails multiple times (more than 3), ask user for help
 """

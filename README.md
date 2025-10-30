@@ -404,10 +404,13 @@ genesis/
    - Support Spanish, French, German for global teams
    - Auto-detect language preference
 
-4. **Google Calendar Integration**
-   - Implement MCP tool for calendar scheduling
-   - Automatically create welcome meeting events
-   - Send calendar invites to manager and new hire
+4. **MCP Tool Integration**
+   - **Note**: The project already has MCP connections configured (like Context7)
+   - Implement Google Calendar MCP for scheduling welcome meetings
+   - Automatically create calendar events and send invites
+   - Add Slack MCP for notifications to managers and IT
+   - Integrate GitHub MCP for repository access provisioning
+   - Connect Notion/Confluence MCP for onboarding documentation
 
 ### Medium-term (Next Quarter)
 
