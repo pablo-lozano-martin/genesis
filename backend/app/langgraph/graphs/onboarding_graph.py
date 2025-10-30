@@ -48,11 +48,10 @@ def create_onboarding_graph(
     model = llm_provider.get_model()
 
     # Create prebuilt agent with built-in ReAct loop
-    # Note: Not passing state_schema to use default AgentState
-    # ConversationState fields will be accessible via checkpointer
     agent = create_react_agent(
         model=model,
         tools=tools,
+        state_schema=ConversationState,
         prompt=ONBOARDING_SYSTEM_PROMPT,
         checkpointer=checkpointer
     )

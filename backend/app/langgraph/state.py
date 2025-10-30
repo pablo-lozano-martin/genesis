@@ -20,6 +20,7 @@ class ConversationState(MessagesState):
         messages: List[BaseMessage] - Inherited from MessagesState, auto-managed
         conversation_id: UUID of the current conversation
         user_id: UUID of the user owning the conversation
+        remaining_steps: Integer tracking steps remaining (required by create_react_agent)
 
         # Onboarding fields (collected via read_data/write_data tools)
         employee_name: Optional employee full name
@@ -32,7 +33,10 @@ class ConversationState(MessagesState):
     conversation_id: str
     user_id: str
 
-    # NEW: Onboarding fields
+    # Required by create_react_agent
+    remaining_steps: Optional[int] = None
+
+    # Onboarding fields (collected via read_data/write_data tools)
     employee_name: Optional[str] = None
     employee_id: Optional[str] = None
     starter_kit: Optional[str] = None
