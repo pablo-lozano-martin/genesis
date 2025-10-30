@@ -54,14 +54,17 @@ async def transcribe_audio(
 
     # Validate audio file
     try:
+        logger.info(f"Validating audio file: {audio_file.filename}, content_type: {audio_file.content_type}")
         audio_content = await validate_audio_file(audio_file)
-    except HTTPException:
+        logger.info(f"Audio file validated successfully, size: {len(audio_content)} bytes")
+    except HTTPException as e:
+        logger.error(f"Audio validation failed with HTTP exception: {e.detail}")
         raise
     except Exception as e:
-        logger.error(f"Audio validation error: {e}")
+        logger.error(f"Audio validation error: {type(e).__name__}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid audio file"
+            detail=f"Invalid audio file: {str(e)}"
         )
 
     # Transcribe

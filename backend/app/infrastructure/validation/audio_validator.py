@@ -47,10 +47,18 @@ async def validate_audio_file(audio_file: UploadFile) -> bytes:
 
     # Validate magic number
     file_type = magic.from_buffer(content, mime=True)
+    logger.info(f"Detected MIME type from magic bytes: {file_type}")
+
+    # WebM can be detected as video/webm even for audio-only files
+    # Accept both audio/webm and video/webm for .webm files
+    if file_type == "video/webm" and audio_file.content_type == "audio/webm":
+        logger.info("Accepting video/webm for audio/webm (webm codec variation)")
+        file_type = "audio/webm"
+
     if file_type not in SUPPORTED_MIME_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File type mismatch (MIME spoofing detected)"
+            detail=f"File type mismatch: expected one of {SUPPORTED_MIME_TYPES}, got {file_type}"
         )
 
     logger.info(f"Audio validation passed: {audio_file.filename}")
