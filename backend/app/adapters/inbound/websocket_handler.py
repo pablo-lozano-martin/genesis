@@ -119,16 +119,16 @@ async def handle_websocket_chat(
                     await manager.send_message(websocket, error_msg.model_dump())
                     continue
 
-                # Get tools from graph metadata if available
+                # Get tools from graph metadata if available (for tool source detection)
                 tools = getattr(graph, '_tools', None)
 
-                # Create RunnableConfig with thread_id (conversation.id) and llm_provider
+                # Create RunnableConfig with thread_id for checkpointing
+                # Note: For create_react_agent graphs, tools and model are bound at creation time,
+                # not invocation time, so we no longer pass llm_provider and tools in config
                 config = RunnableConfig(
                     configurable={
                         "thread_id": conversation.id,
-                        "llm_provider": llm_provider,
-                        "user_id": user.id,
-                        "tools": tools  # Pass tools to call_llm node
+                        "user_id": user.id
                     }
                 )
 

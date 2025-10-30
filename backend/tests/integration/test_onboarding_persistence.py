@@ -2,7 +2,8 @@ import pytest
 from langgraph.types import RunnableConfig
 from langgraph.checkpoint.mongodb.aio import AsyncMongoDBSaver
 from app.langgraph.state import ConversationState
-from app.langgraph.graphs.streaming_chat_graph import create_streaming_chat_graph
+from app.langgraph.graphs.onboarding_graph import create_onboarding_graph
+from app.langgraph.tools import read_data, write_data, rag_search, export_data
 from langchain_core.messages import HumanMessage
 from unittest.mock import AsyncMock
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -24,8 +25,9 @@ async def test_state_changes_persisted_by_checkpointer():
     mock_llm.bind_tools = AsyncMock(return_value=mock_llm)
     mock_llm.generate = AsyncMock(return_value=HumanMessage(content="Test response"))
 
-    # Create graph with checkpointer
-    graph = create_streaming_chat_graph(checkpointer)
+    # Create onboarding graph with checkpointer and tools
+    onboarding_tools = [read_data, write_data, rag_search, export_data]
+    graph = create_onboarding_graph(checkpointer, onboarding_tools)
 
     config = RunnableConfig(
         configurable={
@@ -75,8 +77,9 @@ async def test_state_retrieval_after_conversation_restart():
     mock_llm.bind_tools = AsyncMock(return_value=mock_llm)
     mock_llm.generate = AsyncMock(return_value=HumanMessage(content="Test response"))
 
-    # Create graph with checkpointer
-    graph = create_streaming_chat_graph(checkpointer)
+    # Create onboarding graph with checkpointer and tools
+    onboarding_tools = [read_data, write_data, rag_search, export_data]
+    graph = create_onboarding_graph(checkpointer, onboarding_tools)
 
     conversation_id = "conv-test-restart"
 

@@ -4,6 +4,7 @@
 from abc import ABC, abstractmethod
 from typing import List, AsyncGenerator, Callable, Any
 from langchain_core.messages import BaseMessage
+from langchain_core.language_models import BaseChatModel
 
 
 class ILLMProvider(ABC):
@@ -70,5 +71,19 @@ class ILLMProvider(ABC):
 
         Returns:
             A new ILLMProvider instance with tools bound
+        """
+        pass
+
+    @abstractmethod
+    def get_model(self) -> BaseChatModel:
+        """
+        Get the underlying LangChain ChatModel instance.
+
+        Used by LangGraph prebuilt agents that require native LangChain models.
+        This method exposes the internal LangChain chat model (ChatOpenAI, ChatAnthropic, etc.)
+        to enable integration with LangGraph's create_react_agent and other prebuilt components.
+
+        Returns:
+            Underlying ChatModel instance (ChatOpenAI, ChatAnthropic, ChatGoogleGenerativeAI, ChatOllama)
         """
         pass

@@ -112,9 +112,13 @@ async def lifespan(app: FastAPI):
     # Onboarding graph uses only specific tools (no MCP, no multiply/add)
     onboarding_tools = [read_data, write_data, rag_search, export_data]
 
+    # Get LLM provider for onboarding graph (create_react_agent requires native model)
+    from app.adapters.outbound.llm_providers.provider_factory import get_llm_provider
+    llm_provider = get_llm_provider()
+
     app.state.chat_graph = create_chat_graph(checkpointer, all_tools)
     app.state.streaming_chat_graph = create_streaming_chat_graph(checkpointer, all_tools)
-    app.state.onboarding_graph = create_onboarding_graph(checkpointer, onboarding_tools)
+    app.state.onboarding_graph = create_onboarding_graph(checkpointer, onboarding_tools, llm_provider)
     logger.info("LangGraph graphs compiled with checkpointing enabled")
 
     logger.info("Application startup complete")
