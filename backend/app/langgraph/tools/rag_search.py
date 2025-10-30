@@ -2,11 +2,13 @@
 # ABOUTME: Integrates with ChromaDB vector store for document retrieval
 
 from typing import Optional
+from langchain_core.tools import tool
 from app.infrastructure.config.logging_config import get_logger
 
 logger = get_logger(__name__)
 
 
+@tool
 async def rag_search(query: str) -> str:
     """
     Search the shared knowledge base for relevant documents.

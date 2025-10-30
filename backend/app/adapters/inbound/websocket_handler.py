@@ -165,7 +165,9 @@ async def handle_websocket_chat(
                         elif event_type == "on_chat_model_end":
                             # Check if AIMessage contains tool_calls
                             output = event["data"].get("output")
+                            logger.info(f"=== on_chat_model_end === output type: {type(output)}, has tool_calls: {hasattr(output, 'tool_calls') if output else False}")
                             if output and hasattr(output, 'tool_calls') and output.tool_calls:
+                                logger.info(f"=== TOOL CALLS DETECTED === {[tc.get('name') if isinstance(tc, dict) else getattr(tc, 'name', 'unknown') for tc in output.tool_calls]}")
                                 # Store first tool call (parallel_tool_calls=False in our config)
                                 current_tool_call = output.tool_calls[0]
 

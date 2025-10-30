@@ -4,19 +4,23 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
-from langchain_core.messages import HumanMessage
-from app.langgraph.state import ConversationState
+from typing import Optional, Annotated, Dict, Any
+from langchain_core.messages import HumanMessage, ToolMessage
+from langchain_core.tools import tool, InjectedToolCallId
+from langgraph.prebuilt import InjectedState
+from langgraph.types import Command
 from app.adapters.outbound.llm_providers.provider_factory import get_llm_provider
 from app.infrastructure.config.logging_config import get_logger
 
 logger = get_logger(__name__)
 
 
+@tool
 async def export_data(
-    state: ConversationState,
+    state: Annotated[Dict[str, Any], InjectedState],
+    tool_call_id: Annotated[str, InjectedToolCallId],
     confirmation_message: Optional[str] = None
-) -> dict:
+) -> Command:
     """
     Export collected onboarding data and generate summary.
 
@@ -37,9 +41,8 @@ async def export_data(
         confirmation_message: Optional message from agent confirming export intent
 
     Returns:
-        Dictionary with status, message, file_path, and summary.
-        Success case returns status='success' with exported file path.
-        Error case returns status='error' with missing fields list.
+        Command object that updates the state with the summary and returns success message.
+        Returns error message if required fields are missing.
     """
 
     # Step 1: Collect required fields
@@ -63,12 +66,17 @@ async def export_data(
         logger.warning(
             f"Export attempted with missing required fields: {missing_required}"
         )
-        return {
-            "status": "error",
-            "message": f"Cannot export: missing required fields",
-            "missing_fields": missing_required,
-            "required_fields": list(required_fields.keys())
-        }
+        error_msg = f"Cannot export: missing required fields: {', '.join(missing_required)}"
+        return Command(
+            update={
+                "messages": [
+                    ToolMessage(
+                        content=error_msg,
+                        tool_call_id=tool_call_id
+                    )
+                ]
+            }
+        )
 
     # Step 2: Generate LLM-powered summary
     llm_provider = get_llm_provider()
@@ -94,10 +102,7 @@ Focus on key highlights and any notable requests or concerns."""
         logger.error(f"Summary generation failed: {e}")
         summary_text = "Summary generation unavailable"
 
-    # Step 3: Update state with summary (auto-persists via checkpointer)
-    state["conversation_summary"] = summary_text
-
-    # Step 4: Export to JSON file (Docker volume)
+    # Step 3: Export to JSON file (Docker volume)
     export_dir = Path("/app/onboarding_data")
     export_dir.mkdir(exist_ok=True)
 
@@ -122,15 +127,29 @@ Focus on key highlights and any notable requests or concerns."""
         logger.info(f"Exported onboarding data to {filepath}")
     except Exception as e:
         logger.error(f"Failed to write export file: {e}")
-        return {
-            "status": "error",
-            "message": f"Failed to write export file: {str(e)}",
-            "file_path": str(filepath)
-        }
+        error_msg = f"Failed to write export file: {str(e)}"
+        return Command(
+            update={
+                "messages": [
+                    ToolMessage(
+                        content=error_msg,
+                        tool_call_id=tool_call_id
+                    )
+                ]
+            }
+        )
 
-    return {
-        "status": "success",
-        "message": "Onboarding data exported successfully",
-        "file_path": str(filepath),
-        "summary": summary_text
-    }
+    # Step 4: Update state with summary and return success
+    success_msg = f"Onboarding data exported successfully to {filepath}\n\nSummary:\n{summary_text}"
+
+    return Command(
+        update={
+            "conversation_summary": summary_text,
+            "messages": [
+                ToolMessage(
+                    content=success_msg,
+                    tool_call_id=tool_call_id
+                )
+            ]
+        }
+    )

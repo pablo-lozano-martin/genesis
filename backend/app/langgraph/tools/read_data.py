@@ -1,17 +1,19 @@
 # ABOUTME: Tool for querying collected onboarding data from conversation state
 # ABOUTME: Allows agent to check what fields have been collected during conversation
 
-from typing import Optional, List, Dict, Any
-from app.langgraph.state import ConversationState
+from typing import Optional, List, Dict, Any, Annotated
+from langchain_core.tools import tool
+from langgraph.prebuilt import InjectedState
 from app.infrastructure.config.logging_config import get_logger
 
 logger = get_logger(__name__)
 
 
-async def read_data(
-    state: ConversationState,
+@tool
+def read_data(
+    state: Annotated[Dict[str, Any], InjectedState],
     field_names: Optional[List[str]] = None
-) -> Dict[str, Any]:
+) -> str:
     """
     Query collected fields from current conversation state.
 
@@ -27,22 +29,13 @@ async def read_data(
     - conversation_summary: Summary of conversation
 
     Args:
-        state: Current ConversationState (passed by LangGraph)
+        state: Current ConversationState (injected by LangGraph)
         field_names: Optional list of specific field names to query.
                     If None, returns all onboarding fields.
                     E.g., ["employee_name", "employee_id"]
 
     Returns:
-        Dictionary with field names and current values:
-        {
-            "employee_name": "John Doe" or None,
-            "employee_id": "EMP-123" or None,
-            "starter_kit": "mouse" or None,
-            "dietary_restrictions": "vegetarian" or None,
-            "meeting_scheduled": true or None,
-            "conversation_summary": "..." or None,
-            "status": "success"
-        }
+        Formatted string with field names and current values for the LLM.
     """
     # Define all available onboarding fields
     all_onboarding_fields = [
@@ -61,18 +54,18 @@ async def read_data(
     invalid_fields = [f for f in fields_to_query if f not in all_onboarding_fields]
     if invalid_fields:
         logger.warning(f"Attempted to read invalid fields: {invalid_fields}")
-        return {
-            "status": "error",
-            "message": f"Invalid field names: {invalid_fields}",
-            "valid_fields": all_onboarding_fields
-        }
+        return f"Error: Invalid field names: {invalid_fields}. Valid fields: {', '.join(all_onboarding_fields)}"
 
-    # Extract field values from state
-    result = {}
+    # Extract field values from state and format as string
+    result_lines = ["Current onboarding data:"]
+
     for field in fields_to_query:
-        result[field] = state.get(field)
+        value = state.get(field)
+        if value is not None:
+            result_lines.append(f"- {field}: {value}")
+        else:
+            result_lines.append(f"- {field}: (not collected yet)")
 
-    result["status"] = "success"
     logger.info(f"Read {len(fields_to_query)} fields from state")
 
-    return result
+    return "\n".join(result_lines)

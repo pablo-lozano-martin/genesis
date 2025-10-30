@@ -86,10 +86,12 @@ async def lifespan(app: FastAPI):
 
     # Register local tools
     for tool in local_tools:
-        # Local tools are Python functions with __name__ and __doc__
+        # Local tools are now StructuredTool instances with .name and .description
+        tool_name = getattr(tool, 'name', getattr(tool, '__name__', 'unknown'))
+        tool_description = getattr(tool, 'description', getattr(tool, '__doc__', ''))
         tool_registry.register_tool(ToolMetadata(
-            name=tool.__name__,
-            description=tool.__doc__ or f"Local Python tool: {tool.__name__}",
+            name=tool_name,
+            description=tool_description or f"Local Python tool: {tool_name}",
             source=ToolSource.LOCAL
         ))
 

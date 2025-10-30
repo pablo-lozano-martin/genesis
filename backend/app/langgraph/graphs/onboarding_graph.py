@@ -12,6 +12,39 @@ from app.infrastructure.config.logging_config import get_logger
 logger = get_logger(__name__)
 
 
+def _initialize_onboarding_state(state):
+    """
+    Pre-model hook to ensure onboarding state fields have default values.
+
+    This hook is called before each LLM invocation to initialize any missing
+    custom state fields. This is required for create_react_agent to properly
+    handle custom state fields when tools try to access them.
+
+    Args:
+        state: Current state dict
+
+    Returns:
+        Dict with updates to apply to state (or empty dict if no updates needed)
+    """
+    updates = {}
+
+    # Initialize all onboarding fields if not present or None
+    onboarding_fields = {
+        "employee_name": None,
+        "employee_id": None,
+        "starter_kit": None,
+        "dietary_restrictions": None,
+        "meeting_scheduled": None,
+        "conversation_summary": None
+    }
+
+    for field, default_value in onboarding_fields.items():
+        if field not in state or state.get(field) is None:
+            updates[field] = default_value
+
+    return updates
+
+
 def create_onboarding_graph(
     checkpointer: AsyncMongoDBSaver,
     tools: Optional[List[Callable]] = None,
@@ -53,6 +86,7 @@ def create_onboarding_graph(
         tools=tools,
         state_schema=ConversationState,
         prompt=ONBOARDING_SYSTEM_PROMPT,
+        pre_model_hook=_initialize_onboarding_state,
         checkpointer=checkpointer
     )
 
