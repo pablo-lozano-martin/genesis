@@ -15,6 +15,7 @@ from app.adapters.inbound.user_router import router as user_router
 from app.adapters.inbound.conversation_router import router as conversation_router
 from app.adapters.inbound.message_router import router as message_router
 from app.adapters.inbound.websocket_router import router as websocket_router
+from app.adapters.inbound.transcription_router import router as transcription_router
 
 logger = get_logger(__name__)
 
@@ -171,6 +172,7 @@ def create_app() -> FastAPI:
     app.include_router(conversation_router)
     app.include_router(message_router)
     app.include_router(websocket_router)
+    app.include_router(transcription_router)
 
     # Health check endpoint
     @app.get("/api/health")

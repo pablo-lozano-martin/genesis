@@ -98,6 +98,11 @@ class Settings(BaseSettings):
     mcp_enabled: bool = False
     mcp_config_path: str = "./genesis_mcp.json"
 
+    # Transcription Settings
+    whisper_model: str = "whisper-1"
+    transcription_max_file_size_mb: int = 25
+    transcription_max_duration_seconds: int = 300
+
     @property
     def get_mcp_servers(self) -> list[dict]:
         """

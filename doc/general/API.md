@@ -123,6 +123,41 @@ Get all messages in a conversation.
 
 **Returns**: Array of message objects (200)
 
+### Transcription Endpoint
+
+#### Transcribe Audio
+`POST /api/transcribe`
+
+Transcribe audio file to text using OpenAI Whisper.
+
+**Authentication**: Required (JWT token)
+**Content-Type**: `multipart/form-data`
+
+**Form Data**:
+- `audio_file` (file, required): Audio file (webm, wav, mp3, m4a, ogg)
+- `language` (string, optional): ISO 639-1 language code (e.g., "en", "es")
+- `conversation_id` (string, optional): Conversation ID for ownership verification
+
+**Returns** (200):
+```json
+{
+  "text": "Transcribed text from audio",
+  "language": "en",
+  "duration": 3.5
+}
+```
+
+**Errors**:
+- 400: Invalid audio file format or size
+- 401: Authentication required
+- 403: Access denied (conversation ownership)
+- 413: File too large (>25MB)
+- 500: Transcription service error
+
+**Supported Formats**: webm, wav, mp3, m4a, ogg
+**Max File Size**: 25MB
+**Max Duration**: 5 minutes
+
 ### WebSocket Endpoint
 
 #### Real-time Chat
