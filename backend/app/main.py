@@ -15,6 +15,7 @@ from app.adapters.inbound.user_router import router as user_router
 from app.adapters.inbound.conversation_router import router as conversation_router
 from app.adapters.inbound.message_router import router as message_router
 from app.adapters.inbound.websocket_router import router as websocket_router
+from app.adapters.inbound.transcription_router import router as transcription_router
 
 logger = get_logger(__name__)
 
@@ -82,10 +83,12 @@ async def lifespan(app: FastAPI):
 
     # Register local tools
     for tool in local_tools:
-        # Local tools are Python functions with __name__ and __doc__
+        # Local tools can be Python functions or StructuredTool instances
+        tool_name = getattr(tool, 'name', getattr(tool, '__name__', 'unknown'))
+        tool_description = getattr(tool, 'description', getattr(tool, '__doc__', ''))
         tool_registry.register_tool(ToolMetadata(
-            name=tool.__name__,
-            description=tool.__doc__ or f"Local Python tool: {tool.__name__}",
+            name=tool_name,
+            description=tool_description or f"Local tool: {tool_name}",
             source=ToolSource.LOCAL
         ))
 
@@ -157,6 +160,7 @@ def create_app() -> FastAPI:
     app.include_router(conversation_router)
     app.include_router(message_router)
     app.include_router(websocket_router)
+    app.include_router(transcription_router)
 
     # Health check endpoint
     @app.get("/api/health")

@@ -4,6 +4,7 @@
 from typing import List, AsyncGenerator, Callable, Any
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import BaseMessage
+from langchain_core.language_models import BaseChatModel
 
 from app.core.ports.llm_provider import ILLMProvider
 from app.infrastructure.config.settings import settings
@@ -109,3 +110,14 @@ class GeminiProvider(ILLMProvider):
         new_provider = GeminiProvider.__new__(GeminiProvider)
         new_provider.model = bound_model
         return new_provider
+
+    def get_model(self) -> BaseChatModel:
+        """
+        Get the underlying LangChain ChatModel instance.
+
+        Used by LangGraph prebuilt agents that require native LangChain models.
+
+        Returns:
+            Underlying ChatGoogleGenerativeAI model instance
+        """
+        return self.model

@@ -1,8 +1,12 @@
 # Working with Pablo
 
-## Code Writing
+## General Indications
 
 - YOU MUST ALWAYS address me as "Pablo" in all communications.
+- When reporting information to Pablo, be extremely concise and sacrifice grammar for the sake of concision.
+
+## Code Writing
+
 - We STRONGLY prefer simple, clean, maintainable solutions over clever or complex ones. Readability and maintainability are PRIMARY CONCERNS, even at the cost of conciseness or performance.
 - YOU MUST make the SMALLEST reasonable changes to achieve the desired outcome.
 - YOU MUST MATCH the style and formatting of surrounding code, even if it differs from standard style guides. Consistency within a file trumps external standards.
