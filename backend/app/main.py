@@ -67,6 +67,7 @@ async def lifespan(app: FastAPI):
     # Compile LangGraph graphs with checkpointer and combined tools
     from app.langgraph.graphs.chat_graph import create_chat_graph
     from app.langgraph.graphs.streaming_chat_graph import create_streaming_chat_graph
+    from app.langgraph.graphs.react_agent_graph import create_react_agent_graph
     from app.langgraph.tools.multiply import multiply
     from app.langgraph.tools.add import add
     from app.langgraph.tools.rag_search import rag_search
@@ -108,8 +109,13 @@ async def lifespan(app: FastAPI):
 
     logger.info(f"Compiling graphs with {len(local_tools)} local tools and {len(mcp_tools)} MCP tools")
 
+    # Get LLM provider for react_agent_graph (requires native model)
+    from app.adapters.outbound.llm_providers.provider_factory import get_llm_provider
+    llm_provider = get_llm_provider()
+
     app.state.chat_graph = create_chat_graph(checkpointer, all_tools)
     app.state.streaming_chat_graph = create_streaming_chat_graph(checkpointer, all_tools)
+    app.state.react_agent_graph = create_react_agent_graph(checkpointer, all_tools, llm_provider)
     logger.info("LangGraph graphs compiled with checkpointing enabled")
 
     logger.info("Application startup complete")
