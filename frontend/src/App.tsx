@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ChatProvider } from "./contexts/ChatContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
@@ -9,23 +10,25 @@ import { Chat } from "./pages/Chat";
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route
-            path="/chat"
-            element={
-              <ProtectedRoute>
-                <ChatProvider>
-                  <Chat />
-                </ChatProvider>
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/" element={<Navigate to="/chat" replace />} />
-        </Routes>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute>
+                  <ChatProvider>
+                    <Chat />
+                  </ChatProvider>
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/" element={<Navigate to="/chat" replace />} />
+          </Routes>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

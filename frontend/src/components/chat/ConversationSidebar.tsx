@@ -57,8 +57,8 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
   };
 
   return (
-    <div className="w-64 border-r bg-gray-50 flex flex-col">
-      <div className="p-4 border-b">
+    <div className="w-64 border-r dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex flex-col">
+      <div className="p-4 border-b dark:border-gray-700">
         <button
           onClick={onCreate}
           className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
@@ -71,8 +71,8 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
         {conversations.map((conv) => (
           <div
             key={conv.id}
-            className={`p-4 border-b cursor-pointer hover:bg-gray-100 ${
-              currentConversation?.id === conv.id ? "bg-gray-100" : ""
+            className={`p-4 border-b dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 ${
+              currentConversation?.id === conv.id ? "bg-gray-100 dark:bg-gray-800" : ""
             }`}
             onClick={() => onSelect(conv.id)}
           >
@@ -86,7 +86,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                     onBlur={() => saveEdit(conv.id)}
                     onKeyDown={(e) => handleKeyDown(e, conv.id)}
                     autoFocus
-                    className="text-sm font-medium w-full px-1 py-0.5 border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="text-sm font-medium w-full px-1 py-0.5 border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
                     onClick={(e) => e.stopPropagation()}
                   />
                 ) : (
@@ -101,7 +101,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                   </div>
                 )}
                 {conv.message_count !== undefined && (
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {conv.message_count} messages
                   </div>
                 )}
@@ -111,7 +111,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                   e.stopPropagation();
                   onDelete(conv.id);
                 }}
-                className="text-gray-400 hover:text-red-500"
+                className="text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
               >
                 ×
               </button>
@@ -120,7 +120,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
         ))}
 
         {conversations.length === 0 && (
-          <div className="p-4 text-center text-sm text-gray-400">
+          <div className="p-4 text-center text-sm text-gray-400 dark:text-gray-500">
             No conversations yet
           </div>
         )}

@@ -31,12 +31,12 @@ export const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow">
-        <h1 className="text-2xl font-bold mb-6 text-gray-900">Create Account</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+      <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-lg shadow">
+        <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Create Account</h1>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded text-sm">
+          <div className="mb-4 p-3 bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400 rounded text-sm">
             {error}
           </div>
         )}
@@ -49,7 +49,7 @@ export const Register: React.FC = () => {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Username"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             />
           </div>
 
@@ -60,7 +60,7 @@ export const Register: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             />
           </div>
 
@@ -71,7 +71,7 @@ export const Register: React.FC = () => {
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Full Name"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             />
           </div>
 
@@ -82,22 +82,22 @@ export const Register: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             />
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300"
+            className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-700"
           >
             {isLoading ? "Creating account..." : "Register"}
           </button>
         </form>
 
-        <div className="mt-4 text-center text-sm text-gray-600">
+        <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
           Already have an account?{" "}
-          <Link to="/login" className="text-blue-500 hover:underline">
+          <Link to="/login" className="text-blue-500 dark:text-blue-400 hover:underline">
             Login
           </Link>
         </div>

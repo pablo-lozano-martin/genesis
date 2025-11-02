@@ -7,6 +7,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { MessageList } from "../components/chat/MessageList";
 import { MessageInput } from "../components/chat/MessageInput";
 import { ConversationSidebar } from "../components/chat/ConversationSidebar";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 export const Chat: React.FC = () => {
   const { user, logout } = useAuth();
@@ -27,13 +28,14 @@ export const Chat: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col">
-      <div className="border-b px-4 py-3 flex items-center justify-between bg-white">
+      <div className="border-b px-4 py-3 flex items-center justify-between bg-white dark:bg-gray-800">
         <div className="font-semibold">Genesis</div>
         <div className="flex items-center gap-4">
-          <div className="text-sm text-gray-600">{user?.username}</div>
+          <ThemeToggle />
+          <div className="text-sm text-gray-600 dark:text-gray-400">{user?.username}</div>
           <button
             onClick={logout}
-            className="text-sm text-gray-500 hover:text-gray-700"
+            className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           >
             Logout
           </button>
@@ -50,21 +52,21 @@ export const Chat: React.FC = () => {
           onRename={updateConversationTitle}
         />
 
-        <div className="flex-1 flex flex-col bg-white">
+        <div className="flex-1 flex flex-col bg-white dark:bg-gray-900">
           {!currentConversation ? (
-            <div className="flex-1 flex items-center justify-center text-gray-400">
+            <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">
               Select a conversation or create a new one
             </div>
           ) : (
             <>
               {error && (
-                <div className="bg-red-50 text-red-600 px-4 py-2 text-sm">
+                <div className="bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400 px-4 py-2 text-sm">
                   {error}
                 </div>
               )}
 
               {!isConnected && (
-                <div className="bg-yellow-50 text-yellow-600 px-4 py-2 text-sm">
+                <div className="bg-yellow-50 text-yellow-600 dark:bg-yellow-950/30 dark:text-yellow-400 px-4 py-2 text-sm">
                   Connecting...
                 </div>
               )}
