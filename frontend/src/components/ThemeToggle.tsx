@@ -27,7 +27,7 @@ export function ThemeToggle() {
     <button
       onClick={handleToggle}
       aria-label={`Current theme: ${theme}`}
-      className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+      className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
     >
       {getIcon()}
     </button>

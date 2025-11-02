@@ -28,8 +28,8 @@ export const Chat: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col">
-      <div className="border-b px-4 py-3 flex items-center justify-between bg-white dark:bg-gray-800">
-        <div className="font-semibold">Genesis</div>
+      <div className="border-b dark:border-gray-700 px-4 py-3 flex items-center justify-between bg-white dark:bg-gray-800">
+        <div className="font-semibold dark:text-white">Genesis</div>
         <div className="flex items-center gap-4">
           <ThemeToggle />
           <div className="text-sm text-gray-600 dark:text-gray-400">{user?.username}</div>

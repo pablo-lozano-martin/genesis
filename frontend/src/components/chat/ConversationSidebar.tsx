@@ -91,7 +91,7 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                   />
                 ) : (
                   <div
-                    className="text-sm font-medium truncate cursor-text"
+                    className="text-sm font-medium truncate cursor-text dark:text-white"
                     onClick={(e) => {
                       e.stopPropagation();
                       startEdit(conv.id, conv.title);
