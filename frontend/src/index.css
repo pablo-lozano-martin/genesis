@@ -3,31 +3,45 @@
 @tailwind utilities;
 
 @layer base {
-  /* Scrollbar styling for webkit browsers */
+  /* Scrollbar styling for webkit browsers - light mode */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-gray-100 dark:bg-gray-800;
+    background-color: #f3f4f6;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-400 dark:bg-gray-600 rounded;
+    background-color: #9ca3af;
+    border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-500 dark:bg-gray-500;
+    background-color: #6b7280;
+  }
+
+  /* Scrollbar styling for webkit browsers - dark mode */
+  .dark ::-webkit-scrollbar-track {
+    background-color: #1f2937;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background-color: #4b5563;
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background-color: #6b7280;
   }
 
   /* Firefox scrollbar */
   * {
     scrollbar-width: thin;
-    scrollbar-color: theme('colors.gray.400') theme('colors.gray.100');
+    scrollbar-color: #9ca3af #f3f4f6;
   }
 
   .dark * {
-    scrollbar-color: theme('colors.gray.600') theme('colors.gray.800');
+    scrollbar-color: #4b5563 #1f2937;
   }
 }
