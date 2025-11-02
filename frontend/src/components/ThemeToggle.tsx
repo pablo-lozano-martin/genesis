@@ -11,7 +11,9 @@ export function ThemeToggle() {
     const themes = ['light', 'dark', 'system'] as const;
     const currentIndex = themes.indexOf(theme);
     const nextIndex = (currentIndex + 1) % themes.length;
-    setTheme(themes[nextIndex]);
+    const newTheme = themes[nextIndex];
+    console.log('ThemeToggle: changing from', theme, 'to', newTheme);
+    setTheme(newTheme);
   };
 
   const getIcon = () => {

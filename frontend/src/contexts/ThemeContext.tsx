@@ -36,12 +36,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Apply theme class to document element
   useEffect(() => {
     const root = document.documentElement;
+    console.log('Theme effect:', { theme, effectiveTheme, systemPreference });
     if (effectiveTheme === 'dark') {
       root.classList.add('dark');
+      console.log('Added dark class');
     } else {
       root.classList.remove('dark');
+      console.log('Removed dark class');
     }
-  }, [effectiveTheme]);
+  }, [effectiveTheme, theme, systemPreference]);
 
   // Listen to system preference changes
   useEffect(() => {
