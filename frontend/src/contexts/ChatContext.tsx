@@ -91,19 +91,23 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setStreamingMessage(wsStreamingMessage.content);
       setIsStreaming(!wsStreamingMessage.isComplete);
 
-      if (wsStreamingMessage.isComplete) {
-        setTimeout(() => {
-          setStreamingMessage(null);
-          setToolExecutions([]);
-          setCurrentToolExecution(null);
-          currentToolExecutionRef.current = null;
-          if (currentConversation) {
-            loadMessages(currentConversation.id);
-          }
-        }, 100);
+      if (wsStreamingMessage.isComplete && currentConversation) {
+        const newMessage: Message = {
+          id: `${Date.now()}-assistant`,
+          conversation_id: currentConversation.id,
+          role: "assistant",
+          content: wsStreamingMessage.content,
+          created_at: new Date().toISOString(),
+        };
+
+        setMessages((prev) => [...prev, newMessage]);
+        setStreamingMessage(null);
+        setToolExecutions([]);
+        setCurrentToolExecution(null);
+        currentToolExecutionRef.current = null;
       }
     }
-  }, [wsStreamingMessage]);
+  }, [wsStreamingMessage, currentConversation]);
 
   const loadConversations = async () => {
     try {
