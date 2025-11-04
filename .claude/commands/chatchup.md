@@ -1,4 +1,3 @@
 # Catchup
 
-Pablo has recently cleared the context window of Claude Code.
-Read all changed files in my git branch.
+Read all files changed in current git branch compared to main branch to catch up on recent work.
