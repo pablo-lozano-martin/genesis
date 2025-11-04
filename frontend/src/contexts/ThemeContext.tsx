@@ -37,6 +37,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     console.log('Theme effect:', { theme, effectiveTheme, systemPreference });
+    console.log('Before:', root.className, root.classList.contains('dark'));
+
     if (effectiveTheme === 'dark') {
       root.classList.add('dark');
       console.log('Added dark class');
@@ -44,6 +46,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       root.classList.remove('dark');
       console.log('Removed dark class');
     }
+
+    console.log('After:', root.className, root.classList.contains('dark'));
+
+    // Force recheck after a moment to see if something is re-adding it
+    setTimeout(() => {
+      console.log('After 100ms:', root.className, root.classList.contains('dark'));
+    }, 100);
   }, [effectiveTheme, theme, systemPreference]);
 
   // Listen to system preference changes
