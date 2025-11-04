@@ -9,7 +9,7 @@ Feature/Bug/Chore idea: $ARGUMENT$
 - Identify what needs clarification
 
 ## Step 2: Clarification
-Ask me questions about anything unclear:
+Use AskUserQuestion tool to ask me questions about anything unclear:
 - User scenarios
 - Edge cases
 - Integration requirements
