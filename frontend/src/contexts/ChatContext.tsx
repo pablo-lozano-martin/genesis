@@ -31,6 +31,8 @@ interface ChatContextType {
   error: string | null;
   toolExecutions: ToolExecution[];
   currentToolExecution: ToolExecution | null;
+  expandedToolId: string | null;
+  setExpandedToolId: (id: string | null) => void;
   loadConversations: () => Promise<void>;
   createConversation: () => Promise<void>;
   selectConversation: (id: string) => Promise<void>;
@@ -49,6 +51,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isStreaming, setIsStreaming] = useState(false);
   const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
   const [currentToolExecution, setCurrentToolExecution] = useState<ToolExecution | null>(null);
+  const [expandedToolId, setExpandedToolId] = useState<string | null>(null);
   const currentToolExecutionRef = useRef<ToolExecution | null>(null);
 
   const handleToolStart = useCallback((toolName: string, toolInput: string, source?: string) => {
@@ -77,6 +80,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentToolExecution(null);
   }, []);
 
+  const clearToolExecutions = useCallback(() => {
+    setToolExecutions([]);
+    setCurrentToolExecution(null);
+    setExpandedToolId(null);
+    currentToolExecutionRef.current = null;
+  }, []);
+
   const token = authService.getToken() || "";
   const { isConnected, error, sendMessage: wsSendMessage, streamingMessage: wsStreamingMessage } = useWebSocket({
     url: `${WS_URL}/ws/chat`,
@@ -102,9 +112,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setMessages((prev) => [...prev, newMessage]);
         setStreamingMessage(null);
-        setToolExecutions([]);
-        setCurrentToolExecution(null);
-        currentToolExecutionRef.current = null;
+        setExpandedToolId(null);
       }
     }
   }, [wsStreamingMessage, currentConversation]);
@@ -140,6 +148,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const selectConversation = async (id: string) => {
     try {
+      clearToolExecutions();
       const conv = await conversationService.getConversation(id);
       setCurrentConversation(conv);
       await loadMessages(id);
@@ -182,6 +191,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const sendMessage = (content: string) => {
     if (!currentConversation || !isConnected) return;
 
+    clearToolExecutions();
+
     // Detect if this is the first user message
     const userMessages = messages.filter((m) => m.role === "user");
     const isFirstMessage = userMessages.length === 0;
@@ -223,6 +234,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error,
         toolExecutions,
         currentToolExecution,
+        expandedToolId,
+        setExpandedToolId,
         loadConversations,
         createConversation,
         selectConversation,

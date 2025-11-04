@@ -19,6 +19,9 @@ export const Chat: React.FC = () => {
     isStreaming,
     isConnected,
     error,
+    toolExecutions,
+    expandedToolId,
+    setExpandedToolId,
     createConversation,
     selectConversation,
     deleteConversation,
@@ -71,7 +74,14 @@ export const Chat: React.FC = () => {
                 </div>
               )}
 
-              <MessageList messages={messages} streamingMessage={streamingMessage} isStreaming={isStreaming} />
+              <MessageList
+                messages={messages}
+                streamingMessage={streamingMessage}
+                isStreaming={isStreaming}
+                toolExecutions={toolExecutions}
+                expandedToolId={expandedToolId}
+                onToggleExpandTool={setExpandedToolId}
+              />
               <MessageInput
                 onSend={sendMessage}
                 disabled={!isConnected || isStreaming}
