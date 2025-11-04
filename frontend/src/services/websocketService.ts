@@ -73,8 +73,8 @@ export interface WebSocketConfig {
   onError?: (error: string, code?: string) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
-  onToolStart?: (toolName: string, toolInput: string, source?: string) => void;
-  onToolComplete?: (toolName: string, toolResult: string, source?: string) => void;
+  onToolStart?: (toolName: string, toolInput: string, source?: string, timestamp?: string) => void;
+  onToolComplete?: (toolName: string, toolResult: string, source?: string, timestamp?: string) => void;
 }
 
 export class WebSocketService {
@@ -155,11 +155,11 @@ export class WebSocketService {
           break;
 
         case MessageType.TOOL_START:
-          this.config.onToolStart?.(message.tool_name, message.tool_input, message.source);
+          this.config.onToolStart?.(message.tool_name, message.tool_input, message.source, message.timestamp);
           break;
 
         case MessageType.TOOL_COMPLETE:
-          this.config.onToolComplete?.(message.tool_name, message.tool_result, message.source);
+          this.config.onToolComplete?.(message.tool_name, message.tool_result, message.source, message.timestamp);
           break;
 
         default:

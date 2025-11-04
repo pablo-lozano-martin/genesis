@@ -54,13 +54,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [expandedToolId, setExpandedToolId] = useState<string | null>(null);
   const currentToolExecutionRef = useRef<ToolExecution | null>(null);
 
-  const handleToolStart = useCallback((toolName: string, toolInput: string, source?: string) => {
+  const handleToolStart = useCallback((toolName: string, toolInput: string, source?: string, timestamp?: string) => {
     const execution: ToolExecution = {
-      id: `${Date.now()}-${toolName}`,
+      id: timestamp || `${Date.now()}-${toolName}`,
       toolName,
       toolInput,
       status: "running",
-      startTime: new Date().toISOString(),
+      startTime: timestamp || new Date().toISOString(),
       source: source as "local" | "mcp" | undefined,
     };
     currentToolExecutionRef.current = execution;
@@ -68,16 +68,18 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToolExecutions((prev) => [...prev, execution]);
   }, []);
 
-  const handleToolComplete = useCallback((_toolName: string, toolResult: string, _source?: string) => {
+  const handleToolComplete = useCallback((toolName: string, toolResult: string, _source?: string, timestamp?: string) => {
     setToolExecutions((prev) =>
       prev.map((exec) =>
-        exec.id === currentToolExecutionRef.current?.id
-          ? { ...exec, toolResult, status: "completed", endTime: new Date().toISOString() }
+        exec.id === timestamp || (exec.toolName === toolName && exec.status === "running")
+          ? { ...exec, toolResult, status: "completed", endTime: timestamp || new Date().toISOString() }
           : exec
       )
     );
-    currentToolExecutionRef.current = null;
-    setCurrentToolExecution(null);
+    if (currentToolExecutionRef.current?.toolName === toolName) {
+      currentToolExecutionRef.current = null;
+      setCurrentToolExecution(null);
+    }
   }, []);
 
   const clearToolExecutions = useCallback(() => {

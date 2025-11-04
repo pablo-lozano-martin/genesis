@@ -9,8 +9,8 @@ export interface UseWebSocketOptions {
   url: string;
   token: string;
   autoConnect?: boolean;
-  onToolStart?: (toolName: string, toolInput: string) => void;
-  onToolComplete?: (toolName: string, toolResult: string) => void;
+  onToolStart?: (toolName: string, toolInput: string, source?: string, timestamp?: string) => void;
+  onToolComplete?: (toolName: string, toolResult: string, source?: string, timestamp?: string) => void;
 }
 
 export interface StreamingMessage {
