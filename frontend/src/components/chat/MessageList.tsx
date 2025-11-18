@@ -4,22 +4,23 @@
 import React, { useEffect, useRef } from "react";
 import type { Message } from "../../services/conversationService";
 import { ToolExecutionCard } from "./ToolExecutionCard";
-import { useChat } from "../../contexts/ChatContext";
 import { MarkdownMessage } from "./MarkdownMessage";
 
 interface MessageListProps {
   messages: Message[];
   streamingMessage: string | null;
   isStreaming: boolean;
+  toolExecutions: any[];
+  expandedToolId: string | null;
+  onToggleExpandTool: (id: string | null) => void;
 }
 
-export const MessageList: React.FC<MessageListProps> = ({ messages, streamingMessage, isStreaming }) => {
+export const MessageList: React.FC<MessageListProps> = ({ messages, streamingMessage, isStreaming, toolExecutions, expandedToolId, onToggleExpandTool }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
-  const { toolExecutions } = useChat();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamingMessage, toolExecutions]);
+  }, [messages, streamingMessage, toolExecutions, expandedToolId]);
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -53,7 +54,12 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, streamingMes
       {toolExecutions.length > 0 && (
         <div className="tool-executions">
           {toolExecutions.map((execution) => (
-            <ToolExecutionCard key={execution.id} execution={execution} />
+            <ToolExecutionCard
+              key={execution.id}
+              execution={execution}
+              isExpanded={expandedToolId === execution.id}
+              onToggleExpand={onToggleExpandTool}
+            />
           ))}
         </div>
       )}
